@@ -10,3 +10,4 @@ router.register(r'course', CourseViewSet)
 urlpatterns = [
     path('', include(router.urls)),
 ]
+#yxh test
