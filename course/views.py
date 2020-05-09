@@ -1,18 +1,14 @@
-from django.shortcuts import render
 from rest_framework import viewsets
 from .serializers import CourseSerializer
 from .models import Course
-from django.contrib.contenttypes.models import ContentType
-from rest_access_policy import AccessPolicy
+from user.permission import ZstAccessPolicy
+from django.contrib.auth import get_user_model
 
-
-class UserAccessPolicy(AccessPolicy):
-    # ... other properties and methods ...
-
-    def get_user_group_values(self, user):
-        return list(user.roles.values_list("title", flat=True))
+User = get_user_model()
 
 
 class CourseViewSet(viewsets.ModelViewSet):
+    permission_name = "course"
+    permission_classes = (ZstAccessPolicy,)
     serializer_class = CourseSerializer
     queryset = Course.objects.all()

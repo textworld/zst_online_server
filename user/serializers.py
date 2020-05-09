@@ -113,7 +113,19 @@ class ZstTokenRefreshSerializer(TokenObtainPairSerializer):
         return json
 
 
+class ZstActionSerializer(WrapMixins, serializers.ModelSerializer):
+    class Meta:
+        model = ActionSet
+        fields = '__all__'
+
+
 class ZstPermissionSerializer(WrapMixins, serializers.ModelSerializer):
+    actions = ZstActionSerializer(many=True, read_only=True)
+    save_actions = serializers.PrimaryKeyRelatedField(many=True,
+                                                      write_only=True,
+                                                      queryset=models.ActionSet.objects.all(),
+                                                      allow_null=True,
+                                                      allow_empty=True)
     class Meta:
         model = Permission
         fields = '__all__'
@@ -125,10 +137,6 @@ class ZstRoleSerializer(WrapMixins, serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ZstActionSerializer(WrapMixins, serializers.ModelSerializer):
-    class Meta:
-        model = ActionSet
-        fields = '__all__'
 
 
 class GrantUserRoleSerializer(serializers.Serializer):
