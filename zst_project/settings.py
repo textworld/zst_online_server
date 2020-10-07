@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'djoser',
     'phonenumber_field',
     'course.apps.CourseConfig',
-    'user.apps.UserConfig'
+    'user.apps.UserConfig',
+    'bill.apps.BillConfig'
 ]
 
 AUTH_USER_MODEL = 'user.ZstUser'
@@ -50,7 +51,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    #'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -110,6 +111,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # <-- And here
     ],
+    'COERCE_DECIMAL_TO_STRING': False
 }
 
 SIMPLE_JWT = {
