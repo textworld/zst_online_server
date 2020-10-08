@@ -13,7 +13,7 @@ configparser==3.7.4
 cryptography==2.8
 cycler==0.10.0
 decorator==4.4.2
-Django==2.2.5
+Django==2.2.13
 django-phonenumber-field==5.0.0
 django-templated-mail==1.1.1
 djangorestframework==3.11.0
