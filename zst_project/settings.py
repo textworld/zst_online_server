@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'djoser',
     'phonenumber_field',
     'course.apps.CourseConfig',
     'user.apps.UserConfig',
@@ -111,7 +110,12 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # <-- And here
     ],
-    'COERCE_DECIMAL_TO_STRING': False
+    'COERCE_DECIMAL_TO_STRING': False,
+    'DEFAULT_RENDERER_CLASSES': [
+        'zst_project.render.ApiRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    'EXCEPTION_HANDLER': 'zst_project.render.my_api_exception_handler'
 }
 
 SIMPLE_JWT = {
@@ -124,6 +128,8 @@ DJOSER = {
         'current_user': 'user.serializers.ZstUserSerializers'
     },
 }
+
+AUTHENTICATION_BACKENDS = ["user.ldap_backend.LdapBackend"]
 
 
 # Internationalization
@@ -144,3 +150,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+ZST_LDAP_BIND_DN_STR = 'uid=admin,ou=system'
+ZST_LDAP_BIND_DN_PASSWORD = 'ffffff'

@@ -3,7 +3,6 @@ from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser
 
-
 class Permission(models.Model):
     name = models.CharField(max_length=128, null=False)
     description = models.TextField(max_length=1024, null=True)
