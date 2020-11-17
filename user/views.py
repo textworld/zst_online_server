@@ -1,78 +1,60 @@
-from . import serializers, models
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import action
-from django.contrib.auth.models import Group, Permission, ContentType
+
+from django.contrib.auth import login, logout, authenticate
+from django.http.response import HttpResponseNotAllowed, HttpResponse
+from django.contrib.auth import get_user_model
+from .serializers import LoginSerializer, UserSerializer
+from rest_framework import exceptions
+from django.utils.translation import gettext as _
 
 
-class ZstTokenObtainPairView(TokenObtainPairView):
-    """
-    Takes a set of user credentials and returns an access and refresh JSON web
-    token pair to prove the authentication of those credentials.
-    """
-    serializer_class = serializers.ZstTokenRefreshSerializer
+class LoginAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(True)
+        user = authenticate(request, **serializer.validated_data)
+        if user is None:
+            raise exceptions.ValidationError(_("invalid username or password"))
+        login(request, user)
+        return Response(UserSerializer(user).data)
 
-
-# class GroupViewSet(viewsets.ModelViewSet):
-#     serializer_class = serializers.GroupSerializers
-#     queryset = Group.objects.all()
 #
-#     def create(self, request, *args, **kwargs):
-#         serializer = self.get_serializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         self.perform_create(serializer)
-#         permissions = Permission.objects.filter(id__in=request.data['permissions'])
-#         serializer.instance.permissions.add(*permissions)
-#         headers = self.get_success_headers(serializer.data)
-#         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+# def django_login(request):
+#     username = request.POST['username']
+#     password = request.POST['password']
+#     user = authenticate(request, username=username, password=password)
+#     if user is None:
+#         return HttpResponse('error username or password', status=401)
+#     login(request, user)
+#     return HttpResponse('login success')
 #
-#     def update(self, request, *args, **kwargs):
-#         try:
-#             group = Group.objects.get(id=int(kwargs['pk']))
-#         except Group.DoesNotExist:
-#             return Response({"message": "not found", "code": 404, "result": ""}, status=status.HTTP_404_NOT_FOUND)
+# def django_true_login(request):
+#     username = request.POST['username']
+#     password = request.POST['password']
+#     login()
 #
-#         permissions = Permission.objects.filter(id__in=request.data['permissions'])
-#         group.permissions.clear()
-#         group.permissions.add(*permissions)
-#         return Response({"message": "success", "code": 200, "result": ""}, status=status.HTTP_202_ACCEPTED)
+# def django_is_login(request):
+#     print(request.user) # 如果没有登录的话，那么输出AnonymousUser
+#     # 还有其他的一些有用的属性
+#     # request.user.is_superuser
+#     request.user.is_authenticated
+#     if request.user.is_authenticated:
+#         return HttpResponse('is logined')
+#     return HttpResponse('not login', status=401)
+#
+# def django_register(request):
+#     email = request.POST['email']
+#     username = request.POST['username']
+#     password = request.POST['password']
+#     User = get_user_model()
+#     field_meta = User._meta.get_field('username')
+#     max_length = field_meta.max_length
+#
+#     user = User()
+#     setattr(user, 'username', username)
+#     setattr(user, 'email', email)
+#     user.set_password(password)
+#     user.save()
+#     return HttpResponse('register success')
 
-
-class ContentTypeList(APIView):
-    def get(self, request):
-        rows = ContentType.objects.all()
-        serializer = serializers.SimpleContentTypeSerializers(rows, many=True)
-        return Response(serializer.data)
-
-
-class ZstRoleViewSet(viewsets.ModelViewSet):
-    serializer_class = serializers.ZstRoleSerializer
-    queryset = models.Role.objects.all()
-
-
-class ZstPermissionViewSet(viewsets.ModelViewSet):
-    serializer_class = serializers.ZstPermissionSerializer
-    queryset = models.Permission.objects.all()
-
-
-class ZstActionSetViewSet(viewsets.ModelViewSet):
-    serializer_class = serializers.ZstActionSerializer
-    queryset = models.ActionSet.objects.all()
-
-
-class ZstUserSetViewSet(viewsets.ModelViewSet):
-    queryset = models.ZstUser.objects.all()
-    serializer_class = serializers.ZstUserSerializers
-
-    @action(detail=True, methods=['post'])
-    def grantRoles(self, request, pk=None):
-        print(pk)
-        serializer = serializers.GrantUserRoleSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response({'code': status.HTTP_400_BAD_REQUEST, 'message': 'invalid', 'result': serializer.errors})
-
-        u = serializer.save(uid=int(pk))
-
-        return Response({'code': status.HTTP_200_OK, 'message': 'success', 'result': u.roles.all().values_list('id', flat=True)})

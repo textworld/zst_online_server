@@ -1,6 +1,0 @@
-update lll;
-insert ff;
-insert 
-lll;
--- f
-lll insert iii;

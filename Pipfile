@@ -1,0 +1,17 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.douban.com/simple"
+verify_ssl = false
+
+[dev-packages]
+
+[packages]
+djangorestframework = "*"
+djoser = "*"
+django-phonenumber-field = "*"
+phonenumbers = "*"
+djangorestframework-simplejwt = "*"
+dateutils = "*"
+
+[requires]
+python_version = "3.7"

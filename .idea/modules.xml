@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/zst_project.iml" filepath="$PROJECT_DIR$/.idea/zst_project.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/zst_online_server.iml" filepath="$PROJECT_DIR$/.idea/zst_online_server.iml" />
     </modules>
   </component>
 </project>

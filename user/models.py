@@ -3,7 +3,6 @@ from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser
 
-
 class Permission(models.Model):
     name = models.CharField(max_length=128, null=False)
     description = models.TextField(max_length=1024, null=True)
@@ -31,3 +30,10 @@ class ZstUser(AbstractUser):
     def __str__(self):
         return f"User: {self.username}"
 
+
+class MenuModel(models.Model):
+    url = models.CharField(max_length=128)
+    name = models.CharField(max_length=64)
+    icon = models.CharField(max_length=64)
+    component_path = models.CharField(max_length=64)
+    parent = models.ForeignKey('self', blank=True, null=True, related_name='children')
