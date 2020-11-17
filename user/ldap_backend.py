@@ -7,6 +7,16 @@ class LdapBackend:
     _connection_bound = False
     _connection = None
 
+    def get_user(self, user_id):
+        user = None
+
+        try:
+            user = get_user_model().objects.get(pk=user_id)
+        except get_user_model().ObjectDoesNotExist:
+            pass
+
+        return user
+
     def authenticate(self, request, username=None, password=None, **kwargs):
         results = self.connection.search_s('o=zst_python,dc=example,dc=com', ldap.SCOPE_SUBTREE, "(uid=%s)" % username)
         if results is not None and len(results) == 1:

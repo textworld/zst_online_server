@@ -20,8 +20,9 @@ class ApiRenderer(BaseRenderer):
             if response.status_code == 200:
                 response_dict['data'] = data
             else:
-                response_dict['code'] = response.status_code
+                response_dict['code'] = int(response.status_code / 100 * 1000 + response.status_code % 100)
                 response_dict['message'] = data
+                response.status_code = 200
 
         data = response_dict
         return json.dumps(data)
@@ -31,6 +32,6 @@ def my_api_exception_handler(exec, context):
     logging.exception("exception occur: %s", exec)
     response = exception_handler(exec, context)
     if response is None:
-        response = Response("internal error", status_cdoe=5000)
+        response = Response("internal error", status=500)
 
     return response

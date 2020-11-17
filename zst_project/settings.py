@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'phonenumber_field',
     'course.apps.CourseConfig',
     'user.apps.UserConfig',
-    'bill.apps.BillConfig'
+    'bill.apps.BillConfig',
+    'corsheaders',
 ]
 
 AUTH_USER_MODEL = 'user.ZstUser'
@@ -49,8 +50,9 @@ AUTH_USER_MODEL = 'user.ZstUser'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -108,7 +110,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',  # <-- And here
+       'zst_project.auth.CsrfExemptSessionAuthentication',  # <-- And here
     ],
     'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_RENDERER_CLASSES': [
@@ -152,3 +154,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 ZST_LDAP_BIND_DN_STR = 'uid=admin,ou=system'
 ZST_LDAP_BIND_DN_PASSWORD = 'ffffff'
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080"
+]

@@ -1,5 +1,7 @@
 from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
+from rest_framework import permissions
 
 from django.contrib.auth import login, logout, authenticate
 from django.http.response import HttpResponseNotAllowed, HttpResponse
@@ -18,6 +20,16 @@ class LoginAPIView(APIView):
             raise exceptions.ValidationError(_("invalid username or password"))
         login(request, user)
         return Response(UserSerializer(user).data)
+
+
+class UserDetail(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        return Response(UserSerializer(user).data)
+
+
 
 #
 # def django_login(request):
