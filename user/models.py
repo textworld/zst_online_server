@@ -30,3 +30,10 @@ class ZstUser(AbstractUser):
     def __str__(self):
         return f"User: {self.username}"
 
+
+class MenuModel(models.Model):
+    url = models.CharField(max_length=128)
+    name = models.CharField(max_length=64)
+    icon = models.CharField(max_length=64)
+    component_path = models.CharField(max_length=64)
+    parent = models.ForeignKey('self', blank=True, null=True, related_name='children')
