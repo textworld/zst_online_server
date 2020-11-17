@@ -6,9 +6,12 @@ from rest_framework import permissions
 from django.contrib.auth import login, logout, authenticate
 from django.http.response import HttpResponseNotAllowed, HttpResponse
 from django.contrib.auth import get_user_model
-from .serializers import LoginSerializer, UserSerializer
+from .serializers import LoginSerializer, UserSerializer, MenuSerializer
+from .models import MenuModel
 from rest_framework import exceptions
 from django.utils.translation import gettext as _
+
+from rest_framework import viewsets
 
 
 class LoginAPIView(APIView):
@@ -29,6 +32,10 @@ class UserDetail(APIView):
         user = request.user
         return Response(UserSerializer(user).data)
 
+
+class MenuAPIView(viewsets.ModelViewSet):
+    serializer_class = MenuSerializer
+    queryset = MenuModel.objects.all()
 
 
 #

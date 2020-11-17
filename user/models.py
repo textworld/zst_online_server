@@ -36,4 +36,4 @@ class MenuModel(models.Model):
     name = models.CharField(max_length=64)
     icon = models.CharField(max_length=64)
     component_path = models.CharField(max_length=64)
-    parent = models.ForeignKey('self', blank=True, null=True, related_name='children')
+    parent = models.ForeignKey('self', blank=True, null=True, related_name='children', on_delete=models.PROTECT)

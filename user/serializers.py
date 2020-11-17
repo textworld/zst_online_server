@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework.utils.serializer_helpers import ReturnDict
 import collections
 from rest_framework.status import HTTP_200_OK
-from .models import Role, Permission, ActionSet
+from .models import Role, Permission, ActionSet, MenuModel
 from . import models
 
 
@@ -16,3 +16,9 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ["username", "email"]
+
+
+class MenuSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MenuModel
+        fields = '__all__'
