@@ -20,5 +20,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # path('api/', include('course.urls')),
     path('api/zst_mysql/v1/auth/', include('user.urls')),
+    path('api/zst_mysql/v1/schema_info/', include('schema_info.urls'))
     # path('api/v1/bill/', include('bill.urls'))
 ]

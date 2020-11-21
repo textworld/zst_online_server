@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'user.apps.UserConfig',
     'bill.apps.BillConfig',
     'corsheaders',
+    'schema_info.apps.SchemaInfoConfig'
 ]
 
 AUTH_USER_MODEL = 'user.ZstUser'
