@@ -159,3 +159,4 @@ ZST_LDAP_BIND_DN_PASSWORD = 'ffffff'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080"
 ]
+

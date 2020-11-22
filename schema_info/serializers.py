@@ -36,4 +36,8 @@ class MySQLSchemaNameSerializer(serializers.Serializer):
         pass
 
 
+class KillMySQLProcessSerializer(serializers.Serializer):
+    process_id = serializers.IntegerField(min_value=1)
+
+
 

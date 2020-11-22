@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from schema_info.models import MySQLSchema
 from rest_framework import status, viewsets
-from schema_info.serializers import MySQLSchemaSerializer, MySQLSchemaNameSerializer
+from schema_info.serializers import MySQLSchemaSerializer, MySQLSchemaNameSerializer, KillMySQLProcessSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -36,11 +36,10 @@ class SchemaViewSet(viewsets.ModelViewSet):
         if pk is None:
             raise Http404
         instance = self.get_queryset().get(pk=pk)
-        db = MySQLdb.connect(host=instance.host_ip, port=instance.port, user="root",
-                            passwd="afTD]$]yQ@2:{LQSEQ6bt$]F1mK}Kt#1", db=instance.schema)
+        db = self.get_connection(pk)
         c = db.cursor()
         c.execute("show processlist;")
-        results = c.fetchall()
+        results = c.fetchall() # 获取所有数据
         columns = ["id", "user", "host", "db", "command", "time", "state", "info"]
 
         process_lists = []
@@ -49,12 +48,28 @@ class SchemaViewSet(viewsets.ModelViewSet):
             for idx, col_name in enumerate(columns):
                 d[col_name] = row[idx]
             process_lists.append(d)
+        c.close()
+        db.close()
         return Response(process_lists)
 
-    @action(detail=True, methods=['delete'], url_path="kill_process_list/<int:process_id>/")
-    def kill_process_list(self, request, pk=None, process_id=None, *args, **kwargs):
-        if pk is None or process_id is None:
+    @action(detail=True, methods=['delete'])
+    def kill_process_list(self, request, pk=None, *args, **kwargs):
+        if pk is None is None:
             raise Http404
-        instance = self.get_queryset().get(pk=pk)
-        print("process_id", process_id)
+        serializer = KillMySQLProcessSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        process_id = serializer.validated_data.get('process_id')
+
+        db = self.get_connection(pk)
+        c = db.cursor()
+        c.execute("kill %d" % process_id)
+        c.close()
+        db.close()
         return Response("success")
+
+    def get_connection(self, schema_id):
+        instance = self.get_queryset().get(pk=schema_id)
+        db = MySQLdb.connect(host=instance.host_ip, port=instance.port, user="root",
+                passwd="afTD]$]yQ@2:{LQSEQ6bt$]F1mK}Kt#1", db=instance.schema, connect_timeout=2)
+        return db
