@@ -9,10 +9,10 @@ from django_filters import rest_framework as filters
 import MySQLdb
 from django.http import Http404
 from django.http import HttpResponse
-from schema_info.tasks import add
+from schema_info.tasks import add, send_mail
 
 def add_request(request):
-    result = add.delay(2, 3)
+    result = send_mail.delay("text.zwb@outlook.com", "123")
     print(result)
     return HttpResponse("success")
 
