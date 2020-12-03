@@ -1,6 +1,8 @@
 from celery import shared_task
 from time import sleep
 from celery.utils.log import get_task_logger
+from datetime import datetime
+
 logger = get_task_logger('schema_info')
 from .models import MySQLSchema
 
@@ -15,4 +17,9 @@ def send_mail(addr, user):
     logger.info("n id: %d", n.id)
     logger.info("had send mail: %s %s", addr, user)
     print("sssssfdf")
+    return "success"
+
+@shared_task
+def tttt(a, b):
+    logger.info("tttt")
     return "success"
