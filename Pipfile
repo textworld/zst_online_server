@@ -13,6 +13,7 @@ phonenumbers = "*"
 djangorestframework-simplejwt = "*"
 dateutils = "*"
 django-cors-headers = "*"
+mysqlclient = "*"
 
 [requires]
 python_version = "3.7"
