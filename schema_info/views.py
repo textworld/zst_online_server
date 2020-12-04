@@ -9,11 +9,27 @@ from django_filters import rest_framework as filters
 import MySQLdb
 from django.http import Http404
 from django.http import HttpResponse
-from schema_info.tasks import add, send_mail
+from schema_info.tasks import add, send_mail, check_mysql_group, check_mysql
+from zst_project.celery import app
+from celery.result import AsyncResult
+from celery import Task, chain, group
+
+
+def group_request(request):
+    fn = group(check_mysql.s(i) for i in range(10))
+    group_result = fn.delay()
+    print(group_request)
+    return HttpResponse("success")
+
 
 def add_request(request):
     result = send_mail.delay("text.zwb@outlook.com", "123")
     print(result)
+    return HttpResponse("success")
+
+def query_task_result(request):
+    result = AsyncResult(id='57409e6a-d11a-47dc-9bac-7d29bb66d8e1', app=app)
+    print(result.state)
     return HttpResponse("success")
 
 def login_test(request):

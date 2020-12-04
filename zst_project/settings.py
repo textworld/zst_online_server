@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'user.apps.UserConfig',
     'bill.apps.BillConfig',
     'corsheaders',
-    'schema_info.apps.SchemaInfoConfig'
+    'schema_info.apps.SchemaInfoConfig',
+    'django_celery_results'
 ]
 
 AUTH_USER_MODEL = 'user.ZstUser'
@@ -161,7 +162,8 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CELERY_BROKER_URL = 'redis://:+@^a}-l{&0x3qE(G@115.159.207.78:6379/0'
-CELERY_RESULT_BACKEND = 'redis://:+@^a}-l{&0x3qE(G@115.159.207.78:6379/0'
+#CELERY_RESULT_BACKEND = 'redis://:+@^a}-l{&0x3qE(G@115.159.207.78:6379/0'
+CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
