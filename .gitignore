@@ -207,4 +207,7 @@ fabric.properties
 .idea/**/markdown-navigator.xml
 .idea/**/markdown-navigator/
 
+*.bak
+*.dat
+*.dir
 # End of https://www.gitignore.io/api/django,intellij

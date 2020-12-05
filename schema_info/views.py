@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from schema_info.models import MySQLSchema
+from django.http import HttpResponse
 from rest_framework import status, viewsets
 from schema_info.serializers import MySQLSchemaSerializer, MySQLSchemaNameSerializer, KillMySQLProcessSerializer
 from rest_framework.decorators import action
@@ -8,7 +9,34 @@ from rest_framework.pagination import PageNumberPagination
 from django_filters import rest_framework as filters
 import MySQLdb
 from django.http import Http404
+from .tasks import add, install_mysql_by_ansible
+from celery.result import AsyncResult
+from zst_project.celery import app
 
+def call_add(request):
+    # add(1,2)
+    result = add.delay(1, 2)
+    # AsyncResult
+    print(result)
+    return HttpResponse("success")
+
+
+def install_mysql(request):
+    schema_id = request.POST['schema_id']
+    install_mysql_by_ansible.delay(schema_id)
+    return HttpResponse("success")
+
+def check_mysql_view(request):
+    schema_id = request.POST['schema_id']
+    mysql_instance = MySQLSchema.objects.get(pk=schema_id)
+    install_mysql_by_ansible.delay(mysql_instance)
+    return HttpResponse("success")
+
+# 如何根据task result id来查询任务的状态
+def query_result(request):
+    result = AsyncResult(id="5ce2cd24-4485-4564-9711-0456a055b7c7", app=app)
+    print(result.state)
+    return HttpResponse(result.state)
 
 class CustomPagination(PageNumberPagination):
     page_size = 10
