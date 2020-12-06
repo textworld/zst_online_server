@@ -12,10 +12,12 @@ from django.http import Http404
 from .tasks import add, install_mysql_by_ansible
 from celery.result import AsyncResult
 from zst_project.celery import app
+from .serializers import MySQLInstallSerializer
 
 def call_add(request):
     # add(1,2)
-    result = add.delay(1, 2)
+    sig = add.si(1,2)
+    sig.delay()
     # AsyncResult
     print(result)
     return HttpResponse("success")
@@ -23,8 +25,8 @@ def call_add(request):
 
 def install_mysql(request):
     schema_id = request.POST['schema_id']
-    install_mysql_by_ansible.delay(schema_id)
-    return HttpResponse("success")
+    result = install_mysql_by_ansible.delay(schema_id)
+    return HttpResponse(result)
 
 def check_mysql_view(request):
     schema_id = request.POST['schema_id']
@@ -51,6 +53,14 @@ class SchemaViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
     filter_backends = [filters.DjangoFilterBackend]
     filterset_fields = ['status', 'schema', 'host_ip', 'port']
+
+    @action(detail=False, methods=['post'])
+    def install_mysql(self, request, *args, **kwargs):
+        serializer = MySQLInstallSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        install_mysql_by_ansible.delay(instance.id)
+        return Response("success")
 
     @action(detail=False, methods=['get'])
     def get_distinct_schema_names(self, request, *args, **kwargs):

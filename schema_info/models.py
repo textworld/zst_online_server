@@ -20,6 +20,15 @@ class Host(CommonModel):
     def __str__(self):
         return f"Host: {self.id}-{self.name}-{self.memory}-{self.cpu}"
 
+class AnsibleTaskResult(CommonModel):
+    task_id = models.CharField(max_length=128)
+    task_name = models.CharField(max_length=128)
+    host = models.CharField(max_length=64)
+    result = models.TextField(max_length=65535)
+    status = models.CharField(max_length=32)
+
+
+
 # Create your models here.
 class MySQLSchema(CommonModel):
     MASTER = 'master'
