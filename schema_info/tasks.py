@@ -3,7 +3,6 @@ from celery import shared_task, Task
 from time import sleep
 from celery.utils.log import get_task_logger
 from .models import MySQLSchema
-
 logger = get_task_logger('schema_info')
 
 @shared_task
@@ -39,5 +38,3 @@ def check_mysql(schema_id):
 
     return "success"
 
-# # Bad: orm object
-# def check_mysql(schema):

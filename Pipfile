@@ -13,6 +13,12 @@ phonenumbers = "*"
 djangorestframework-simplejwt = "*"
 dateutils = "*"
 django-cors-headers = "*"
+mysqlclient = "*"
+celery = "*"
+django-celery-results = "*"
+django-filter = "*"
+redis = "*"
+
 
 [requires]
 python_version = "3.7"

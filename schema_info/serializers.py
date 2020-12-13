@@ -36,6 +36,19 @@ class MySQLSchemaNameSerializer(serializers.Serializer):
         pass
 
 
+class MySQLInstallSerializer(serializers.Serializer):
+    host_ip = serializers.CharField(max_length=64)
+    port = serializers.IntegerField()
+    schema = serializers.CharField(max_length=64)
+
+    def create(self, validated_data):
+        print(validated_data)
+        schema = MySQLSchema(host_ip=validated_data['host_ip'],
+                port=validated_data.port, schema=validated_data.schema,
+                status=MySQLSchema.PENDING, role="master")
+        schema.save()
+        return schema
+
 class KillMySQLProcessSerializer(serializers.Serializer):
     process_id = serializers.IntegerField(min_value=1)
 

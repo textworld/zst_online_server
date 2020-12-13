@@ -9,15 +9,24 @@ from rest_framework.pagination import PageNumberPagination
 from django_filters import rest_framework as filters
 import MySQLdb
 from django.http import Http404
-from .tasks import add, install_mysql_by_ansible
+from .tasks import add, install_mysql_by_ansible, check_mysql
 from celery.result import AsyncResult
 from zst_project.celery import app
+from celery import Task, chain, group
+from .serializers import MySQLInstallSerializer
 
 def call_add(request):
     # add(1,2)
     result = add.delay(1, 2)
     # AsyncResult
     print(result)
+    return HttpResponse("success")
+
+def group_request(request):
+    instances = MySQLSchema.objects.all()
+    fn = group(check_mysql.s(i.id) for i in instances)
+    group_result = fn.delay()
+    print(group_result)
     return HttpResponse("success")
 
 
@@ -51,6 +60,13 @@ class SchemaViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
     filter_backends = [filters.DjangoFilterBackend]
     filterset_fields = ['status', 'schema', 'host_ip', 'port']
+
+    @action(detail=False, methods=['post'])
+    def install_mysql(self, request, *args, **kwargs):
+        serializer = MySQLInstallSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response("success")
 
     @action(detail=False, methods=['get'])
     def get_distinct_schema_names(self, request, *args, **kwargs):
