@@ -13,11 +13,13 @@ from .tasks import add, install_mysql_by_ansible, check_mysql
 from celery.result import AsyncResult
 from zst_project.celery import app
 from celery import Task, chain, group
+
 from .serializers import MySQLInstallSerializer
 
 def call_add(request):
     # add(1,2)
-    result = add.delay(1, 2)
+    sig = add.si(1,2)
+    sig.delay()
     # AsyncResult
     print(result)
     return HttpResponse("success")
@@ -32,8 +34,8 @@ def group_request(request):
 
 def install_mysql(request):
     schema_id = request.POST['schema_id']
-    install_mysql_by_ansible.delay(schema_id)
-    return HttpResponse("success")
+    result = install_mysql_by_ansible.delay(schema_id)
+    return HttpResponse(result)
 
 def check_mysql_view(request):
     schema_id = request.POST['schema_id']
@@ -65,7 +67,9 @@ class SchemaViewSet(viewsets.ModelViewSet):
     def install_mysql(self, request, *args, **kwargs):
         serializer = MySQLInstallSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        instance = serializer.save()
+        install_mysql_by_ansible.delay(instance.id)
+
         return Response("success")
 
     @action(detail=False, methods=['get'])

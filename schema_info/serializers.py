@@ -25,7 +25,19 @@ class MySQLSchemaSerializer(serializers.ModelSerializer):
         model = MySQLSchema
         fields = '__all__'
 
+class MySQLInstallSerializer(serializers.Serializer):
+    host_ip = serializers.CharField(max_length=64)
+    port = serializers.IntegerField()
+    schema = serializers.CharField(max_length=64)
 
+    def create(self, validated_data):
+        print(validated_data)
+        schema = MySQLSchema(host_ip=validated_data['host_ip'], 
+                port=validated_data['port'], schema=validated_data['schema'],
+                status=MySQLSchema.PENDING, role="master")
+        schema.save()
+        return schema
+    
 class MySQLSchemaNameSerializer(serializers.Serializer):
     schema = serializers.CharField(max_length=64, required=True)
 

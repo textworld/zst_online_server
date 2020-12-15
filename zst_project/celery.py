@@ -19,9 +19,8 @@ app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
     'chekc-every-30': {
-        'task': 'schema_info.tasks.check_mysql',
+        'task': 'schema_info.tasks.periodic_check_mysql',
         'schedule': 30,
-        'args': (1,)
     }
 }
 

@@ -25,7 +25,7 @@ SECRET_KEY = 'mf^0dirocka1+ypi52_p!54swn-1d1jo2o-1^n751alcbp!ik)'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["115.159.207.78"]
 
 
 # Application definition
@@ -53,7 +53,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    #'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -160,8 +160,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080"
 ]
 
-CELERY_BROKER_URL = 'redis://192.168.31.32:16379/1'
-CELERY_RESULT_BACKEND = 'redis://192.168.31.32:16379/1'
+CELERY_BROKER_URL = 'redis://:+@^a}-l{&0x3qE(G123456@115.159.207.78:6379/1'
+CELERY_RESULT_BACKEND = 'redis://:+@^a}-l{&0x3qE(G123456@115.159.207.78:6379/1'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
