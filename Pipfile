@@ -18,7 +18,8 @@ celery = "*"
 django-celery-results = "*"
 django-filter = "*"
 redis = "*"
-
+kafka-python = "*"
+elasticsearch = "*"
 
 [requires]
 python_version = "3.7"
