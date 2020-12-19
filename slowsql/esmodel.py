@@ -1,5 +1,5 @@
 from elasticsearch_dsl import Document, Date, Integer, Keyword, Text, GeoPoint, Boolean, Long, Float  # 这些都是类型
-
+import json
 
 class SlowQuery(Document):
     finger = Text(fields={'raw': Keyword()})

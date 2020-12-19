@@ -4,6 +4,7 @@ from elasticsearch import Elasticsearch
 from tqdm import tqdm
 import json
 import requests
+import hashlib
 
 
 def randomtimes(start, end, frmt="%Y-%m-%d"):
@@ -64,6 +65,7 @@ if __name__ == '__main__':
     total = 20000
     pbar = tqdm(total=total)
     for i in range(total):
+        # random.randint(1,10) [1, 10]
         table_idx = random.randint(0, len(tables) - 1)
         field_num = random.randint(1, len(tables))
         where_list = []
@@ -87,7 +89,8 @@ if __name__ == '__main__':
             "user": random_schema + "_" + random.choice(user),
             "schema": random_schema,
             "host": "192.168.31.55",
-            "finger": finger_print
+            "finger": finger_print,
+            "hash": hashlib.md5(finger_print.encode('utf-8')).hexdigest()
         }
         es_index = datetime.datetime.strftime(random_time, "mysql-slowsql-test-%Y-%m-%d")
         write_elasticsearch(es, es_index, data)

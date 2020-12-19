@@ -120,7 +120,8 @@ REST_FRAMEWORK = {
         'zst_project.render.ApiRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
-    'EXCEPTION_HANDLER': 'zst_project.render.my_api_exception_handler'
+    'EXCEPTION_HANDLER': 'zst_project.render.my_api_exception_handler',
+    'PAGE_SIZE': 20
 }
 
 SIMPLE_JWT = {
