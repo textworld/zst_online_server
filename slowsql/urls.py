@@ -1,6 +1,6 @@
-from slowsql.views import UserViewSet
+from slowsql.views import SlowSqlViewSet
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
-router.register(r'query', UserViewSet, basename='slowsql_query')
+router.register(r'query', SlowSqlViewSet, basename='slowsql_query')
 urlpatterns = router.urls
