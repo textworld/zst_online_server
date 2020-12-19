@@ -9,7 +9,6 @@ router.register(r'mysql_schema', SchemaViewSet, basename='mysql_schema')
 
 urlpatterns = [
     *router.urls,
-    path('add/', call_add),
     path('query_result/', query_result),
     path('install_mysql/', install_mysql)
 ]

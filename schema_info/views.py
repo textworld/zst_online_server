@@ -16,14 +16,6 @@ from celery import Task, chain, group
 
 from .serializers import MySQLInstallSerializer
 
-def call_add(request):
-    # add(1,2)
-    sig = add.si(1,2)
-    sig.delay()
-    # AsyncResult
-    print(result)
-    return HttpResponse("success")
-
 def group_request(request):
     instances = MySQLSchema.objects.all()
     fn = group(check_mysql.s(i.id) for i in instances)

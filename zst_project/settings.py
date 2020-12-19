@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 from datetime import timedelta
 import os
+from elasticsearch_dsl import connections
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,7 +26,7 @@ SECRET_KEY = 'mf^0dirocka1+ypi52_p!54swn-1d1jo2o-1^n751alcbp!ik)'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["115.159.207.78"]
+ALLOWED_HOSTS = ["115.159.207.78", "127.0.0.1"]
 
 
 # Application definition
@@ -43,7 +44,8 @@ INSTALLED_APPS = [
     'user.apps.UserConfig',
     'bill.apps.BillConfig',
     'corsheaders',
-    'schema_info.apps.SchemaInfoConfig'
+    'schema_info.apps.SchemaInfoConfig',
+    'slowsql.apps.SlowsqlConfig'
 ]
 
 AUTH_USER_MODEL = 'user.ZstUser'
@@ -167,3 +169,5 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = "Asia/Shanghai"
 CELERY_TASK_TIME_LIMIT = 30 * 60
+
+connections.create_connection(hosts=['192.168.33.200:9200'], timeout=60)
