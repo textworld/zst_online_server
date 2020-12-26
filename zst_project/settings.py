@@ -26,7 +26,7 @@ SECRET_KEY = 'mf^0dirocka1+ypi52_p!54swn-1d1jo2o-1^n751alcbp!ik)'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["115.159.207.78", "127.0.0.1"]
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -121,7 +121,10 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
     'EXCEPTION_HANDLER': 'zst_project.render.my_api_exception_handler',
-    'PAGE_SIZE': 20
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'PAGE_QUERY_PARAM': 'page_num',
+    'PAGE_SIZE_QUERY_PARAM': 'page_size'
 }
 
 SIMPLE_JWT = {
