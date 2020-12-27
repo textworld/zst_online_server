@@ -8,6 +8,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from slowsql.esmodel import SlowQuery
+from rest_framework.decorators import action
 
 
 class CustomPagination(PageNumberPagination):
@@ -15,6 +16,7 @@ class CustomPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     page_query_param = 'page_num'
     max_page_size = 500
+
 
 def build_aggs(agg):
     for k in agg.keys():
@@ -39,7 +41,7 @@ def get_aggs(agg, d):
 
 def get_results(agg_query, result):
     if 'aggs' not in agg_query.keys():
-        return
+        return {}
 
     aggs = agg_query.get('aggs')
     if len(aggs.keys()) == 1:
@@ -64,13 +66,22 @@ def get_results(agg_query, result):
                 bucket_results.extend(ret)
             elif isinstance(ret, dict):
                 ret[key_name] = key_val
+                ret[key_name + "_count"] = doc_count
                 bucket_results.append(ret)
         return bucket_results
     else:
         ret = {}
         for key_name in aggs.keys():
-            val = result[key_name]['value']
-            ret[key_name] = val
+            if 'value' in result[key_name]:
+                val = result[key_name]['value']
+                ret[key_name] = val
+            elif list(aggs[key_name].keys())[0] == 'top_hits':
+                print(result[key_name])
+                hits = result[key_name]['hits']['hits']
+                if len(hits) > 0:
+                    for source_field in hits[0]['_source']:
+                        ret[source_field] = hits[0]['_source'][source_field]
+
         return ret
 
 
@@ -84,6 +95,95 @@ class SlowSqlViewSet(viewsets.ViewSet):
             val = default_val
         return val
 
+    @action(detail=False, methods=['get'])
+    def get_aggs_by_date(self, request, *args, **kwargs):
+        s = self.get_query_by_params(request, sorts="@timestamp")
+        aggs = {
+            "aggs": {
+                "date": {
+                    "date_histogram": {
+                        "field": "@timestamp",
+                        "calendar_interval": 'day'
+                    }
+                }
+            }
+        }
+        get_aggs(s.aggs, aggs)
+
+        result = s.execute().aggregations
+
+        rs = get_results(aggs, result)
+        return Response(rs)
+
+    @action(detail=False, methods=['get'])
+    def get_top10_sql(self, request, *args, **kwargs):
+        s = self.get_query_by_params(request)
+        composite = A('terms', script="doc['schema.keyword'].value+'#'+doc['hash.keyword'].value", size=10)
+        s.aggs.bucket('sql', composite).bucket('finger', A('top_hits', _source=["finger"], size=1))
+        aggs = s.execute().aggregations
+        results = []
+        for bucket in aggs.sql.buckets:
+            k = bucket.key
+            keys = k.split('#')
+            data = {
+                "schema": keys[0],
+                "hash": keys[1],
+                "count": bucket.doc_count,
+                "finger": bucket.finger.hits.hits[0]['_source']['finger']
+            }
+            results.append(data)
+
+        return Response(results)
+
+    @action(detail=False, methods=['get'])
+    def get_aggs_by_schema(self, request, *args, **kwargs):
+        s = self.get_query_by_params(request)
+        aggs = {
+            "aggs":
+                {
+                "schema": {
+                    "terms": {
+                        "field": "schema.keyword"
+                    }
+                }
+            }
+        }
+        get_aggs(s.aggs, aggs)
+
+        result = s.execute().aggregations
+
+        rs = get_results(aggs, result)
+        return Response(rs)
+
+
+    # 通用获取参数
+    def get_query_by_params(self, request, sorts=None):
+        start = request.query_params.get('start')
+        end = request.query_params.get('end')
+        s = SlowQuery.search()
+        if start is None or not isinstance(start, str) or len(start.strip()) == 0:
+            start = None
+        if end is None or not isinstance(end, str) or len(end.strip()) == 0:
+            end = None
+
+        if start is not None and end is not None:
+            options = {
+                # greater or equal than  -> gte 大于等于
+                # greater than  -> gt 大于
+                # little or equal thant -> lte 小于或等于
+                'gte': start,
+                'lte': end
+            }
+            s = s.filter('range', **{'@timestamp': options})
+
+        sorts = request.query_params.get('sorts', sorts)
+        if isinstance(sorts, str) and len(sorts) > 0:
+            sorts = [item.strip() for item in sorts.split(",") if len(item.strip()) > 0]
+            s = s.sort(*sorts)
+        else:
+            s = s.sort('-@timestamp')
+        return s
+
     def list(self, request, *args, **kwargs):
         # 入参： 开始时间、结束时间、库名、第几页、每页多少个
         start = request.query_params.get('start')
@@ -95,7 +195,7 @@ class SlowSqlViewSet(viewsets.ViewSet):
         else:
             is_aggr_by_hash = False
 
-        interval = request.query_params.get('interval', '10m')
+        interval = request.query_params.get('interval', '1d')
 
         # 参数验证过程就省略
         s = SlowQuery.search()
@@ -120,7 +220,7 @@ class SlowSqlViewSet(viewsets.ViewSet):
                     "date": {
                         "date_histogram": {
                             "field": "@timestamp",
-                            "interval": "hour"
+                            "calendar_interval": interval
                         },
                         "aggs": {
                             "schema": {
@@ -133,16 +233,38 @@ class SlowSqlViewSet(viewsets.ViewSet):
                                             "field": "hash.keyword"
                                         },
                                         "aggs": {
-                                            "rowsExaminedAvg": {
+                                            "rows_sent": {
+                                                "avg": {
+                                                    "field": "rows_sent"
+                                                }
+                                            },
+                                            "rows_examined": {
                                                 "avg": {
                                                     "field": "rows_examined"
                                                 }
                                             },
-                                            "queryTimeAvg": {
+                                            "query_time": {
                                                 "avg": {
                                                     "field": "query_time"
                                                 }
+                                            },
+                                            "sql": {
+                                                "top_hits": {
+                                                    "_source": [
+                                                        "finger",
+                                                        "@timestamp"
+                                                    ],
+                                                    "sort": [
+                                                        {
+                                                            "@timestamp": {
+                                                                "order": "desc"
+                                                            }
+                                                        }
+                                                    ],
+                                                    "size": 1
+                                                }
                                             }
+
                                         }
                                     }
                                 }
@@ -163,4 +285,5 @@ class SlowSqlViewSet(viewsets.ViewSet):
             data = paginator.paginate_queryset(s, request)
             data = [q.to_dict() for q in data]
 
+        # 补充处理
         return paginator.get_paginated_response(data)

@@ -16,7 +16,6 @@ from elasticsearch_dsl import connections
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
@@ -27,7 +26,6 @@ SECRET_KEY = 'mf^0dirocka1+ypi52_p!54swn-1d1jo2o-1^n751alcbp!ik)'
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-
 
 # Application definition
 
@@ -45,7 +43,8 @@ INSTALLED_APPS = [
     'bill.apps.BillConfig',
     'corsheaders',
     'schema_info.apps.SchemaInfoConfig',
-    'slowsql.apps.SlowsqlConfig'
+    'slowsql.apps.SlowsqlConfig',
+    'news.apps.NewsConfig'
 ]
 
 AUTH_USER_MODEL = 'user.ZstUser'
@@ -55,7 +54,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -81,7 +80,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'zst_project.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
@@ -91,7 +89,6 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -113,7 +110,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-       'zst_project.auth.CsrfExemptSessionAuthentication',  # <-- And here
+        'zst_project.auth.CsrfExemptSessionAuthentication',  # <-- And here
     ],
     'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_RENDERER_CLASSES': [
@@ -128,8 +125,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-   'AUTH_HEADER_TYPES': ('JWT',),
-   'ACCESS_TOKEN_LIFETIME':  timedelta(minutes=6000)
+    'AUTH_HEADER_TYPES': ('JWT',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=6000)
 }
 DJOSER = {
     'SERIALIZERS': {
@@ -139,7 +136,6 @@ DJOSER = {
 }
 
 AUTHENTICATION_BACKENDS = ["user.ldap_backend.LdapBackend"]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
@@ -153,7 +149,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
@@ -175,3 +170,39 @@ CELERY_TIMEZONE = "Asia/Shanghai"
 CELERY_TASK_TIME_LIMIT = 30 * 60
 
 connections.create_connection(hosts=['192.168.33.200:9200'], timeout=60)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': './debug.log',
+            'when': 'midnight',
+            'interval': 1,
+            'backupCount': 10,
+            'formatter': 'verbose'
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}

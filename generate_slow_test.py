@@ -71,13 +71,13 @@ if __name__ == '__main__':
         where_list = []
         for j in range(field_num):
             where_list.append(random.choice(["and", "or"]))
-            where_list.append("{} {} {}".format(
+            where_list.append("{} {} '{}'".format(
                 random.choice(fields),
                 random.choice(["like", "="]),
                 "".join(random.sample('zyxwvutsrqponmlkjihgfedcba', random.randint(1, 10)))))
         sql = "select * from {} where {};".format(tables[table_idx], " ".join(where_list[1:]))
         random_schema = random.choice(schema)
-        random_time = randomtimes('2020-11-01', '2020-12-20')
+        random_time = randomtimes('2019-12-01', '2020-12-27')
         finger_print = get_finger_print(sql)
         data = {
             "query_sql": sql,
