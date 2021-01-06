@@ -42,6 +42,7 @@ def test(request):
             m.save()
     return HttpResponse({"data": "success"})
 
+
 def scraper(request):
     import ssl
     ssl._create_default_https_context = ssl._create_unverified_context

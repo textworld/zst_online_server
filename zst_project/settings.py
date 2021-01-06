@@ -171,12 +171,17 @@ CELERY_TASK_TIME_LIMIT = 30 * 60
 
 connections.create_connection(hosts=['192.168.33.200:9200'], timeout=60)
 
+# flume
+# filebeat -> logstash -> es
+# agent -> router ->kafka1 音乐  -> Flink -> hdfs
+#                 -> kakfa2 严选
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'format': '[{levelname}] {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
         'simple': {

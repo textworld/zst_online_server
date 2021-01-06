@@ -2,7 +2,6 @@ import os
 
 from celery import Celery, platforms
 
-
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zst_project.settings')
 
@@ -21,6 +20,14 @@ app.conf.beat_schedule = {
     'chekc-every-30': {
         'task': 'schema_info.tasks.periodic_check_mysql',
         'schedule': 30,
+    },
+    'fetch-proxy-10': {
+        'task': 'news.tasks.periodic_fetch_proxy_from_zhima',
+        'schedule': 10
+    },
+    'scrap_dbaplus-10': {
+        'task': 'news.tasks.scrap_news',
+        'schedule': 10
     }
 }
 

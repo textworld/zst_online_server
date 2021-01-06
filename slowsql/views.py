@@ -18,6 +18,8 @@ class CustomPagination(PageNumberPagination):
     max_page_size = 500
 
 
+class AlarmSettingViewSet(viewsets.ViewSet):
+    s
 def build_aggs(agg):
     for k in agg.keys():
         if k != "aggs":
