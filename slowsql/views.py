@@ -9,6 +9,8 @@ from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from slowsql.esmodel import SlowQuery
 from rest_framework.decorators import action
+from slowsql.models import AlarmSettingModel
+from slowsql.serializer import AlarmSettingSerializer, AddGlbAlarmSerializer
 
 
 class CustomPagination(PageNumberPagination):
@@ -18,8 +20,26 @@ class CustomPagination(PageNumberPagination):
     max_page_size = 500
 
 
-class AlarmSettingViewSet(viewsets.ViewSet):
-    s
+class AlarmSettingViewSet(viewsets.ModelViewSet):
+    queryset = AlarmSettingModel.objects.exclude(schema__isnull=True)
+    serializer_class = AlarmSettingSerializer
+
+    @action(detail=False, methods=['post', 'get'])
+    def global_setting(self, request, *args, **kwargs):
+        if request.method == 'POST':
+            s = AddGlbAlarmSerializer(data=request.data)
+            s.is_valid(raise_exception=True)
+            instance = s.save()
+            return Response("success")
+
+        settings = AlarmSettingModel.objects.filter(schema=None).order_by("-id")
+        if not settings.exists():
+            return Response([])
+
+        return Response(AddGlbAlarmSerializer(settings.first()).data)
+
+
+
 def build_aggs(agg):
     for k in agg.keys():
         if k != "aggs":
