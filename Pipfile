@@ -21,6 +21,8 @@ redis = "*"
 kafka-python = "*"
 elasticsearch = "*"
 ansible = "*"
+elasticsearch-dsl = "*"
+bs4 = "*"
 
 [requires]
 python_version = "3.7"

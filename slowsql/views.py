@@ -11,6 +11,7 @@ from slowsql.esmodel import SlowQuery
 from rest_framework.decorators import action
 from slowsql.models import AlarmSettingModel
 from slowsql.serializer import AlarmSettingSerializer, AddGlbAlarmSerializer
+from django.http.response import HttpResponse
 
 
 class CustomPagination(PageNumberPagination):
@@ -19,6 +20,10 @@ class CustomPagination(PageNumberPagination):
     page_query_param = 'page_num'
     max_page_size = 500
 
+
+def save_global_setting(request, *args, **kwargs):
+    print(request.body)
+    return HttpResponse("success-3")
 
 class AlarmSettingViewSet(viewsets.ModelViewSet):
     queryset = AlarmSettingModel.objects.exclude(schema__isnull=True)
