@@ -5,23 +5,32 @@ from .models import ProxyModel, NewsModel
 from bs4 import BeautifulSoup
 import datetime
 import hashlib
+from celery.utils.log import get_task_logger
+logger = get_task_logger(__name__)
 
 @shared_task
 def periodic_fetch_proxy_from_zhima():
     url = "http://webapi.http.zhimacangku.com/getip?num=1&type=2&pro=&city=0&yys=0&port=1&pack=131583&ts=1&ys=1&cs=1&lb=3&sb=0&pb=4&mr=1&regions="
     resp = requests.get(url)
-    if resp.status_code == 200:
+    try:
+        if resp.status_code >= 300:
+            raise Exception("incorrect status_code {}:{}".format(resp.status_code, resp.text))
+
         body = json.loads(resp.text)
-        if body['code'] == 0:
-            data = body['data'][0]
-            try:
-                m = ProxyModel.objects.get(ip=data['ip'], port=data['port'])
-                m.expire_time = data['expire_time']
-                m.city = data['city']
-                m.isp = data['isp']
-            except ProxyModel.DoesNotExist:
-                m = ProxyModel(**data)
-            m.save()
+        if body['code'] != 0:
+            raise Exception("incorrect code in resp: {}", resp.text)
+
+        data = body['data'][0]
+        try:
+            m = ProxyModel.objects.get(ip=data['ip'], port=data['port'])
+            m.expire_time = data['expire_time']
+            m.city = data['city']
+            m.isp = data['isp']
+        except ProxyModel.DoesNotExist:
+            m = ProxyModel(**data)
+        m.save()
+    except Exception as e:
+        logger.error("failed to get proxy server from zhima: {}".format(e))
 
 
 @shared_task
