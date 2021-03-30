@@ -40,7 +40,7 @@ class CustomPagination(PageNumberPagination):
     page_query_param = 'page_num'
     max_page_size = 500
 
-
+# SMTP POP3  IMAP
 def send_email_simple(request):
     import smtplib
     my_sender = "zhangwenbing@zstpython.onexmail.com"
@@ -53,13 +53,16 @@ def send_email_simple(request):
     # 邮件的主题，也就是邮件的标题
     msg['Subject'] = "邮件测试"
 
+    # server = smtplib.SMTP('smtp.exmail.qq.com', 465)
+    # server.starttls()
+    # ---------------
     server = smtplib.SMTP_SSL('smtp.exmail.qq.com', 465)
 
-    # server.starttls()
+
     # Next, log in to the server
     server.login(my_sender, "ZSTmail2021")
 
-    server.sendmail("zhangwenbing@zstpython.onexmail.com", "text.zwb@outlook.com", msg.as_string())
+    server.sendmail(my_sender, "text.zwb@outlook.com", msg.as_string())
     server.quit()
     return HttpResponse("success")
 
@@ -124,7 +127,9 @@ def send_email_with_pic(request):
 
 
 def send_with_matplotlib(request):
-
+    # 第一步：我们是从ES获取数据
+    # 第二步：matplotlib 这个库来生成一张图片，然后保存到本地
+    # 第三步：利用我们刚才的代码，去读取生成的图片，然后发送出去，最后生成的图片删除掉
     s = SlowQuery.search()
     options = {
         # greater or equal than  -> gte 大于等于
@@ -156,6 +161,7 @@ def send_with_matplotlib(request):
             }
         }
     }
+
     get_aggs(s.aggs, aggs)
     result = s.execute().aggregations
     rs = get_results(aggs, result)
@@ -170,6 +176,7 @@ def send_with_matplotlib(request):
     plt.figure(figsize=(12, 4))
     # 生成图形
     plt.title('慢SQL数量趋势图')
+    # 核心代码
     plt.plot(dates, np.asarray(counts), label='慢SQL数量')
     plt.legend()
 
@@ -255,6 +262,7 @@ def send_wechat_msg(user, message):
         "enable_duplicate_check": 0,
         "duplicate_check_interval": 1800
     }
+
     headers = {
         'Content-Type': 'application/json'
     }
