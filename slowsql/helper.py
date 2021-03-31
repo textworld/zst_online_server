@@ -1,3 +1,5 @@
+from elasticsearch_dsl import Q, A
+
 
 def build_aggs(agg):
     for k in agg.keys():

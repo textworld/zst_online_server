@@ -21,6 +21,7 @@ import shutil
 
 logger = get_task_logger('schema_info')
 
+
 # Create a callback plugin so we can capture the output
 # class ResultsCollectorJSONCallback(CallbackBase):
 #     """A sample callback plugin used for performing an action as results come in.
@@ -120,39 +121,40 @@ def ansible_install_api(task_id, play_book_path, schema):
     #
     # # Remove ansible tmpdir
     # shutil.rmtree(C.DEFAULT_LOCAL_TMP, True)
-    
-    
 
 
 @shared_task
 def periodic_check_mysql():
-    #instances = MySQLSchema.objects.filter(status=MySQLSchema.ONLINE).all()
+    # instances = MySQLSchema.objects.filter(status=MySQLSchema.ONLINE).all()
     logger.info("periodic_check_mysql")
     # instances = [{"id": i} for i in range(100)]
     # fn = group(check_mysql_alive.si(i['id']) for i in instances)
     # fn()
     # return "success"
     c = chain(check_mysql_alive.si(1) | check_mysql_thread_count.si(1))
-    c.delay() # c() 同步调用 
+    c.delay()  # c() 同步调用
     # result = c.delay()
     # result.get() 同步
-   
+
 
 @shared_task
 def check_mysql_alive(schema_id):
     sleep(1)
     logger.info("check alive for schema_id [%d]", schema_id)
 
+
 @shared_task
 def check_mysql_thread_count(schema_id):
     sleep(5)
-    logger.info("check thread count success")    
+    logger.info("check thread count success")
+
 
 @shared_task
 def add(x, y):
     logger.info("got a request")
     sleep(10)
     return x + y
+
 
 class MyTask(Task):
     def on_success(self, retval, task_id, args, kwargs):
@@ -166,14 +168,15 @@ class MyTask(Task):
 def install_mysql_by_ansible(self, schema_id):
     # xxxxxx
     # 执行ansible脚本去安装mysql
-    task_id =  self.request.id
+    task_id = self.request.id
     schema = MySQLSchema.objects.get(pk=schema_id)
     try:
         ansible_install_api(task_id, "/var/www/playbook-test/test.yml", schema)
     except Exception as e:
         logger.error(e)
-        raise 
+        raise
     return "success"
+
 
 # Good
 @shared_task

@@ -169,6 +169,8 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = "Asia/Shanghai"
 CELERY_TASK_TIME_LIMIT = 30 * 60
 
+
+
 connections.create_connection(hosts=['192.168.33.200:9200'], timeout=60)
 
 # flume

@@ -1,8 +1,5 @@
 from django.shortcuts import render
 
-# Create your views here.
-from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
 from elasticsearch_dsl import Q, A
 from rest_framework import viewsets
 from rest_framework.response import Response
@@ -19,7 +16,6 @@ import json
 from email.mime.text import MIMEText
 from email.utils import formataddr
 from django.template.loader import render_to_string
-from django.template.loader import get_template
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
@@ -29,6 +25,7 @@ from matplotlib import rcParams
 import matplotlib
 from pylab import mpl
 import os
+from .helper import get_aggs,get_results,build_aggs
 
 token = ""
 expire = int(time.time())
@@ -40,7 +37,7 @@ class CustomPagination(PageNumberPagination):
     page_query_param = 'page_num'
     max_page_size = 500
 
-# SMTP POP3  IMAP
+
 def send_email_simple(request):
     import smtplib
     my_sender = "zhangwenbing@zstpython.onexmail.com"
@@ -53,16 +50,13 @@ def send_email_simple(request):
     # 邮件的主题，也就是邮件的标题
     msg['Subject'] = "邮件测试"
 
-    # server = smtplib.SMTP('smtp.exmail.qq.com', 465)
-    # server.starttls()
-    # ---------------
     server = smtplib.SMTP_SSL('smtp.exmail.qq.com', 465)
 
-
+    # server.starttls()
     # Next, log in to the server
     server.login(my_sender, "ZSTmail2021")
 
-    server.sendmail(my_sender, "text.zwb@outlook.com", msg.as_string())
+    server.sendmail("zhangwenbing@zstpython.onexmail.com", "text.zwb@outlook.com", msg.as_string())
     server.quit()
     return HttpResponse("success")
 
@@ -127,9 +121,7 @@ def send_email_with_pic(request):
 
 
 def send_with_matplotlib(request):
-    # 第一步：我们是从ES获取数据
-    # 第二步：matplotlib 这个库来生成一张图片，然后保存到本地
-    # 第三步：利用我们刚才的代码，去读取生成的图片，然后发送出去，最后生成的图片删除掉
+
     s = SlowQuery.search()
     options = {
         # greater or equal than  -> gte 大于等于
@@ -161,7 +153,6 @@ def send_with_matplotlib(request):
             }
         }
     }
-
     get_aggs(s.aggs, aggs)
     result = s.execute().aggregations
     rs = get_results(aggs, result)
@@ -176,7 +167,6 @@ def send_with_matplotlib(request):
     plt.figure(figsize=(12, 4))
     # 生成图形
     plt.title('慢SQL数量趋势图')
-    # 核心代码
     plt.plot(dates, np.asarray(counts), label='慢SQL数量')
     plt.legend()
 
@@ -262,7 +252,6 @@ def send_wechat_msg(user, message):
         "enable_duplicate_check": 0,
         "duplicate_check_interval": 1800
     }
-
     headers = {
         'Content-Type': 'application/json'
     }
@@ -378,73 +367,6 @@ class AlarmSettingViewSet(viewsets.ModelViewSet):
             return Response([])
 
         return Response(AddGlbAlarmSerializer(settings.first()).data)
-
-
-def build_aggs(agg):
-    for k in agg.keys():
-        if k != "aggs":
-            options = agg.get(k)
-            return A(k, **options)
-
-
-def get_aggs(agg, d):
-    if 'aggs' not in d.keys():
-        return
-
-    aggs = d.get('aggs')
-    if len(aggs.keys()) > 1:
-        for metric_name in aggs.keys():
-            agg = agg.metric(metric_name, build_aggs(aggs.get(metric_name)))
-    elif len(aggs.keys()) == 1:
-        k = list(aggs.keys())[0]
-        agg = agg.bucket(k, build_aggs(aggs.get(k)))
-        get_aggs(agg, aggs.get(k))
-
-
-def get_results(agg_query, result):
-    if 'aggs' not in agg_query.keys():
-        return {}
-
-    aggs = agg_query.get('aggs')
-    if len(aggs.keys()) == 1:
-        key_name = list(aggs.keys())[0]
-        bucket_results = []
-        for bucket in result[key_name]['buckets']:
-            doc_count = 0
-            key_val = ''
-            if 'key_as_string' in bucket:
-                key_val = bucket.key_as_string
-            elif 'key' in bucket:
-                key_val = bucket.key
-            else:
-                raise Exception('no key found in bucket')
-            if 'doc_count' in bucket:
-                doc_count = bucket.doc_count
-            ret = get_results(aggs[key_name], bucket)
-            if isinstance(ret, list):
-                for r in ret:
-                    r[key_name + "_count"] = doc_count
-                    r[key_name] = key_val
-                bucket_results.extend(ret)
-            elif isinstance(ret, dict):
-                ret[key_name] = key_val
-                ret[key_name + "_count"] = doc_count
-                bucket_results.append(ret)
-        return bucket_results
-    else:
-        ret = {}
-        for key_name in aggs.keys():
-            if 'value' in result[key_name]:
-                val = result[key_name]['value']
-                ret[key_name] = val
-            elif list(aggs[key_name].keys())[0] == 'top_hits':
-                print(result[key_name])
-                hits = result[key_name]['hits']['hits']
-                if len(hits) > 0:
-                    for source_field in hits[0]['_source']:
-                        ret[source_field] = hits[0]['_source'][source_field]
-
-        return ret
 
 
 class SlowSqlViewSet(viewsets.ViewSet):

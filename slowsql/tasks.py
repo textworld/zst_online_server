@@ -3,10 +3,15 @@ from alarm.alarm import WexinAlarm
 from slowsql.helper import get_aggs, get_results
 from slowsql.models import AlarmSettingModel
 from slowsql.esmodel import SlowQuery
+import redis
+from django.conf import settings
+import time
 
 msg_sender = WexinAlarm()
 
+
 def send_slow_alarm(record):
+    # TODO： 加上告警记录
     msg_template = "您的数据库【{}】存在慢SQL: {}，平均执行时间为{}，一分钟执行了{}次，请关注"
     s = SlowQuery.search()
     results = s.filter("term", hash__keyword=record['hash']).execute()
@@ -19,6 +24,19 @@ def send_slow_alarm(record):
 
 @shared_task
 def alarm_minute():
+    # 从settings中获取配置信息
+    r = redis.StrictRedis(host='localhost', port=6379, db=0)
+    key_name = "slowsql_alarm_start"
+    duration = 60
+    start = int(time.time()) - duration
+
+    if r.exists(key_name):
+        start = r.get(key_name)
+    else:
+        r.set(key_name, start + duration)
+    end = start + duration
+
+    print("start: {}, type: {}".format(start, type(start)))
 
     global_query_time = 10
     global_query_count = 10
@@ -30,14 +48,14 @@ def alarm_minute():
 
     s = SlowQuery.search()
 
-    # options = {
-    #     # greater or equal than  -> gte 大于等于
-    #     # greater than  -> gt 大于
-    #     # little or equal thant -> lte 小于或等于
-    #     'gte': start,
-    #     'lte': end
-    # }
-    # s = s.filter('range', **{'@timestamp': options})
+    options = {
+        # greater or equal than  -> gte 大于等于
+        # greater than  -> gt 大于
+        # little or equal thant -> lte 小于或等于
+        'gte': start,
+        'lte': end
+    }
+    s = s.filter('range', **{'@timestamp': options})
     aggs = {
         "aggs": {
             "schema": {

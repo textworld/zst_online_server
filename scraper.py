@@ -3,7 +3,10 @@ import ssl
 from bs4 import BeautifulSoup
 ssl._create_default_https_context = ssl._create_unverified_context
 
+import jinja2
+
 if __name__ == '__main__':
+    jinja2.
     # http://h.zhimaruanjian.com/ucenter/?first_time=1#info
     import requests
 
