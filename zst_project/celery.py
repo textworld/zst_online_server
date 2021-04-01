@@ -29,10 +29,10 @@ app.conf.beat_schedule = {
     #     'task': 'news.tasks.scrap_news',
     #     'schedule': 10
     # }
-    'slowsql_alarm': {
-        'task': 'slowsql.tasks.alarm_minute',
-        'schedule': 10
-    }
+    # 'slowsql_alarm': {
+    #     'task': 'slowsql.tasks.alarm_minute',
+    #     'schedule': 10
+    # }
 }
 
 platforms.C_FORCE_ROOT = True

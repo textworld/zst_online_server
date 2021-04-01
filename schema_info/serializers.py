@@ -56,7 +56,7 @@ class MySQLInstallSerializer(serializers.Serializer):
     def create(self, validated_data):
         print(validated_data)
         schema = MySQLSchema(host_ip=validated_data['host_ip'],
-                port=validated_data.port, schema=validated_data.schema,
+                port=validated_data['port'], schema=validated_data['schema'],
                 status=MySQLSchema.PENDING, role="master")
         schema.save()
         return schema

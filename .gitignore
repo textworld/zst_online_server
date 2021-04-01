@@ -211,3 +211,7 @@ fabric.properties
 *.dat
 *.dir
 # End of https://www.gitignore.io/api/django,intellij
+
+*.zip
+ansible-playbook/files/*
+.idea/

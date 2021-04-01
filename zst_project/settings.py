@@ -154,21 +154,24 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+ZST_LDAP_HOST = '127.0.0.1:10389'
 ZST_LDAP_BIND_DN_STR = 'uid=admin,ou=system'
-ZST_LDAP_BIND_DN_PASSWORD = 'ffffff'
+ZST_LDAP_BIND_DN_PASSWORD = 'secret'
+ZST_LDAP_SEARCH_OU = 'o=zst,dc=example,dc=com'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080"
 ]
 
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
+CELERY_BROKER_URL = 'redis://10.37.129.3:6379/1'
+CELERY_RESULT_BACKEND = 'redis://10.37.129.3:6379/1'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = "Asia/Shanghai"
 CELERY_TASK_TIME_LIMIT = 30 * 60
 
+ANSIBLE_PRIVATE_KEY = "~/.ssh/id_rsa"
 
 
 connections.create_connection(hosts=['192.168.33.200:9200'], timeout=60)
