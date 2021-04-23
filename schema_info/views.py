@@ -60,6 +60,7 @@ class SchemaViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         install_mysql_by_ansible.delay(instance.id)
+        # install_mysql_by_ansible.delay(instance) 不对的写法
         return Response("success")
 
     @action(detail=False, methods=['get'])

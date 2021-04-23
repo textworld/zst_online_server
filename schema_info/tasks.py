@@ -43,8 +43,8 @@ class ResultsCollectorJSONCallback(CallbackBase):
         self.host_unreachable[host.get_name()] = result
 
     def v2_runner_on_ok(self, result, *args, **kwargs):
-        if result.task_name == "Gathering Facts":
-            return
+        # if result.task_name == "Gathering Facts":
+        #     return
         print("result", result.__dict__)
         print("result result: ", json.dumps(result._result, indent=4))
         print("task", result._task.__dict__)
@@ -101,6 +101,8 @@ def ansible_install_api(task_id, play_book_path, schema):
 
     logger.info("there are %d tasks to run", len(play_sources))
     for play_book in play_sources:
+        # 添加变量
+        # play_book 到这一步实际上还是一个dict对象
         play_book['hosts'] = host_list
         play_book['vars']['mysql_port'] = schema.port
         play_book['vars']['mysql_schema'] = schema.schema
@@ -161,15 +163,16 @@ class MyTask(Task):
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         print("task failure")
 
-
+# 我们添加了bind=True
 @shared_task(bind=True, base=MyTask)
 def install_mysql_by_ansible(self, schema_id):
     # xxxxxx
     # 执行ansible脚本去安装mysql
+    # 为了获取这次celery task执行的时候的id
     task_id =  self.request.id
     schema = MySQLSchema.objects.get(pk=schema_id)
     try:
-        ansible_install_api(task_id, "/var/www/playbook-test/test.yml", schema)
+        ansible_install_api(task_id, "/var/www/playbook-test/mysql.yml", schema)
     except Exception as e:
         logger.error(e)
         raise 

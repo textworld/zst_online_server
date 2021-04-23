@@ -21,11 +21,11 @@ class Host(CommonModel):
         return f"Host: {self.id}-{self.name}-{self.memory}-{self.cpu}"
 
 class AnsibleTaskResult(CommonModel):
-    task_id = models.CharField(max_length=128)
-    task_name = models.CharField(max_length=128)
-    host = models.CharField(max_length=64)
-    result = models.TextField(max_length=65535)
-    status = models.CharField(max_length=32)
+    task_id = models.CharField(max_length=128) # celery 的task_id
+    task_name = models.CharField(max_length=128) # ansible的task name
+    host = models.CharField(max_length=64) # 对应的host
+    result = models.TextField(max_length=65535) # 结果
+    status = models.CharField(max_length=32) # 状态
 
 
 

@@ -29,14 +29,17 @@ class MySQLInstallSerializer(serializers.Serializer):
     host_ip = serializers.CharField(max_length=64)
     port = serializers.IntegerField()
     schema = serializers.CharField(max_length=64)
+    # def validate(self):
+    # 验证一下host_ip和port是否存在，如果已经存在，那么就可以报错
 
     def create(self, validated_data):
-        print(validated_data)
         schema = MySQLSchema(host_ip=validated_data['host_ip'], 
                 port=validated_data['port'], schema=validated_data['schema'],
                 status=MySQLSchema.PENDING, role="master")
+        # 先去查找，如果找到host_ip + port的组合，并且这个实例的状态是pending，然后就返回这个实例
+        # 否则就报错
         schema.save()
-        return schema
+        return schema # ORM object
     
 class MySQLSchemaNameSerializer(serializers.Serializer):
     schema = serializers.CharField(max_length=64, required=True)
