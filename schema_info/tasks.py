@@ -32,7 +32,7 @@ class ResultsCollectorJSONCallback(CallbackBase):
     or writing your own custom callback plugin.
     """
 
-    def __init__(self, task_id = None, schema_id=None, *args, **kwargs):
+    def __init__(self, task_id=None, schema_id=None, *args, **kwargs):
         super(ResultsCollectorJSONCallback, self).__init__(*args, **kwargs)
         self.host_ok = {}
         self.host_unreachable = {}
@@ -40,32 +40,60 @@ class ResultsCollectorJSONCallback(CallbackBase):
         self.task_id = task_id
         self.schema_id = schema_id
 
-    def v2_runner_on_unreachable(self, result):
-        host = result._host
-        self.host_unreachable[host.get_name()] = result
-        logger.error("runner unreachable")
+    def save_log(self, msg, status=None):
+        task = AnsibleTaskResult.objects.get(task_id=self.task_id)
+        task.result = task.result + "\n" + msg
+        if status:
+            task.status = status
+        task.save()
 
-    def v2_runner_on_ok(self, result, *args, **kwargs):
-        if result.task_name == "Gathering Facts":
-            return
-        print("result", result.__dict__)
-        print("result result: ", json.dumps(result._result, indent=4))
-        print("task", result._task.__dict__)
-        host = result._host
-        self.host_ok[host.get_name()] = result
-        print(json.dumps({host.name: result._result}, indent=4))
-        r = AnsibleTaskResult(
-            task_id=self.task_id,
-            task_name=result.task_name,
-            host=host,
-            result=json.dumps(result._result, indent=4),
-            status="ok")
-        r.save()
+    def runner_on_failed(self, host, res, ignore_errors=False):
+        self.save('FAILED: %s %s' % (host, res))
 
-    def v2_runner_on_failed(self, result, *args, **kwargs):
-        host = result._host
-        self.host_failed[host.get_name()] = result
-        logger.error("failed ansible task: %s", json.dumps({host.name: result._result}, indent=4))
+    def runner_on_ok(self, host, res):
+        self.save('OK: %s %s' % (host, res))
+
+    def runner_on_skipped(self, host, item=None):
+        self.save('SKIPPED: %s' % host)
+
+    def runner_on_unreachable(self, host, res):
+        self.save('UNREACHABLE: %s %s' % (host, res))
+
+    def runner_on_async_failed(self, host, res, jid):
+        self.save('ASYNC_FAILED: %s %s %s' % (host, res, jid))
+
+    def playbook_on_import_for_host(self, host, imported_file):
+        self.save('IMPORTED: %s %s' % (host, imported_file))
+
+    def playbook_on_not_import_for_host(self, host, missing_file):
+        self.save('NOTIMPORTED: %s %s' % (host, missing_file))
+
+    # def v2_runner_on_unreachable(self, result):
+    #     host = result._host
+    #     self.host_unreachable[host.get_name()] = result
+    #     logger.error("runner unreachable")
+    #
+    # def v2_runner_on_ok(self, result, *args, **kwargs):
+    #     if result.task_name == "Gathering Facts":
+    #         return
+    #     print("result", result.__dict__)
+    #     print("result result: ", json.dumps(result._result, indent=4))
+    #     print("task", result._task.__dict__)
+    #     host = result._host
+    #     self.host_ok[host.get_name()] = result
+    #     print(json.dumps({host.name: result._result}, indent=4))
+    #     r = AnsibleTaskResult(
+    #         task_id=self.task_id,
+    #         task_name=result.task_name,
+    #         host=host,
+    #         result=json.dumps(result._result, indent=4),
+    #         status="ok")
+    #     r.save()
+    #
+    # def v2_runner_on_failed(self, result, *args, **kwargs):
+    #     host = result._host
+    #     self.host_failed[host.get_name()] = result
+    #     logger.error("failed ansible task: %s", json.dumps({host.name: result._result}, indent=4))
 
 
 def ansible_install_api(task_id, play_book_path, schema):
@@ -115,6 +143,7 @@ def ansible_install_api(task_id, play_book_path, schema):
         # Actually run it
         try:
             result = tqm.run(play)  # most interesting data for a play is actually sent to the callback's methods
+            print("Result", result)
         finally:
             # we always need to cleanup child procs and the structures we use to communicate with them
             logger.info("tqm has finished")
@@ -180,6 +209,8 @@ def install_mysql_by_ansible(self, schema_id):
         from os.path import dirname, abspath, join
         base_dir = dirname(dirname(abspath(__file__)))
         logger.info("Base_dir: %s", base_dir)
+        task = AnsibleTaskResult(task_id=task_id, status=AnsibleTaskResult.Status.Running, result="Start to execute")
+        task.save()
         ansible_install_api(task_id, join(base_dir, "ansible-playbook/mysql.yml"), schema)
     except Exception as e:
         logger.error(e)
@@ -194,4 +225,5 @@ def check_mysql(schema_id):
     # 通过python去尝试连接对应的mysql实例，如果连接失败，则进行告警
 
     return "success"
+
 

@@ -215,3 +215,8 @@ fabric.properties
 *.zip
 ansible-playbook/files/*
 .idea/
+
+
+*.zip
+*.tar.gz
+*.tar

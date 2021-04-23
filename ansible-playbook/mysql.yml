@@ -9,15 +9,16 @@
     install_packages:
       - vim
       - unzip
-      - libaio
-      - libaio-devel
-      - numactl-devel
-      - perl-Data-Dumper
+      - libaio1
+      - libaio-dev
+      - libnuma-dev
+      - libdata-dumper-simple-perl
+      - libncurses5
   tasks:
-    - - name: install packages
-        package:
-          name: "{{ install_packages }}"
-          state: present
+    - name: install packages
+      package:
+        name: "{{ install_packages }}"
+        state: present
 
     - name: create mysql group
       group:
@@ -33,7 +34,7 @@
 
     - name: scp the mysql installer
       unarchive:
-        src: /Users/mac/Documents/github/zst_online_server/ansible-playbook/files/mysql-8.0.16-linux-glibc2.12-x86_64.zip
+        src: mysql-8.0.16-linux-glibc2.12-x86_64.zip
         dest: /opt/
         owner: mysql
         group: mysql
@@ -42,6 +43,16 @@
       copy:
         dest: /etc/profile.d/mysql-path.sh
         content: 'PATH=$PATH:{{ mysql_base_dir }}bin'
+
+    - name: mysql data base dir not exist
+      stat:
+        path: "{{ mysql_data_dir_base }}{{ mysql_port }}"
+      register: stat_data_dir
+
+    - name: fail task when data dir exist
+      fail:
+        msg: "Whoops! data dir has already exist."
+      when: stat_data_dir.stat.exists
 
     - name: mkdir data base dir
       file:
@@ -52,7 +63,7 @@
 
     - name: template my.cnf
       template:
-        src: /Users/mac/Documents/github/zst_online_server/ansible-playbook/templates/my.cnf.tmpl
+        src: my.cnf.tmpl
         dest: "/etc/my.{{mysql_port}}.cnf"
         owner: mysql
         group: mysql

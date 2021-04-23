@@ -23,6 +23,11 @@ class AlarmSettingSerializer(serializers.ModelSerializer):
     #     del validated_data['schema_name']
     #     return AlarmSettingModel.objects.create(**validated_data)
 
+class SchemaAlarmSerializer(serializers.Serializer):
+    query_time = serializers.IntegerField(min_value=0, required=True)
+    query_count = serializers.IntegerField(min_value=0, required=True)
+    schema = serializers.SlugRelatedField(many=False, slug_field='schema', queryset=MySQLSchema.objects.all(), allow_null=False)
+
 
 # 全局告警设置序列化器
 class AddGlbAlarmSerializer(serializers.Serializer):

@@ -13,8 +13,11 @@ from .tasks import add, install_mysql_by_ansible, check_mysql
 from celery.result import AsyncResult
 from zst_project.celery import app
 from celery import Task, chain, group
+from schema_info.models import AnsibleTaskResult
+from schema_info.serializers import *
 
 from .serializers import MySQLInstallSerializer
+
 
 def group_request(request):
     instances = MySQLSchema.objects.all()
@@ -29,11 +32,13 @@ def install_mysql(request):
     result = install_mysql_by_ansible.delay(schema_id)
     return HttpResponse(result)
 
+
 def check_mysql_view(request):
     schema_id = request.POST['schema_id']
     mysql_instance = MySQLSchema.objects.get(pk=schema_id)
     install_mysql_by_ansible.delay(mysql_instance)
     return HttpResponse("success")
+
 
 # 如何根据task result id来查询任务的状态
 def query_result(request):
@@ -41,11 +46,20 @@ def query_result(request):
     print(result.state)
     return HttpResponse(result.state)
 
+
 class CustomPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     page_query_param = 'page_num'
     max_page_size = 500
+
+
+class AnsibleTaskViewSet(viewsets.ModelViewSet):
+    queryset = AnsibleTaskResult.objects.all()
+    serializer_class = AnsibleTaskSerializer
+    pagination_class = CustomPagination
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_fields = ['status']
 
 
 class SchemaViewSet(viewsets.ModelViewSet):
@@ -79,7 +93,7 @@ class SchemaViewSet(viewsets.ModelViewSet):
         db = self.get_connection(pk)
         c = db.cursor()
         c.execute("show processlist;")
-        results = c.fetchall() # 获取所有数据
+        results = c.fetchall()  # 获取所有数据
         columns = ["id", "user", "host", "db", "command", "time", "state", "info"]
 
         process_lists = []
@@ -111,5 +125,5 @@ class SchemaViewSet(viewsets.ModelViewSet):
     def get_connection(self, schema_id):
         instance = self.get_queryset().get(pk=schema_id)
         db = MySQLdb.connect(host=instance.host_ip, port=instance.port, user="root",
-                passwd="afTD]$]yQ@2:{LQSEQ6bt$]F1mK}Kt#1", db=instance.schema, connect_timeout=2)
+                             passwd="afTD]$]yQ@2:{LQSEQ6bt$]F1mK}Kt#1", db=instance.schema, connect_timeout=2)
         return db

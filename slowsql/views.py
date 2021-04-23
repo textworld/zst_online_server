@@ -7,7 +7,7 @@ from rest_framework.pagination import LimitOffsetPagination, PageNumberPaginatio
 from slowsql.esmodel import SlowQuery
 from rest_framework.decorators import action
 from slowsql.models import AlarmSettingModel
-from slowsql.serializer import AlarmSettingSerializer, AddGlbAlarmSerializer
+from slowsql.serializer import *
 from django.http.response import HttpResponse
 from datetime import datetime
 import time
@@ -367,6 +367,16 @@ class AlarmSettingViewSet(viewsets.ModelViewSet):
             return Response([])
 
         return Response(AddGlbAlarmSerializer(settings.first()).data)
+
+    @action(detail=False, methods=['post', 'get'])
+    def schema_settings(self, request, *args, **kwargs):
+        if request.method == 'POST':
+            # 保存设置
+            return Response([])
+        settings = AlarmSettingModel.objects.filter(type__exact=AlarmSettingModel.Type.Schema, delete=0).all()
+        if settings.count() == 0:
+            return Response([])
+        return Response(SchemaAlarmSerializer(settings, many=True).data)
 
 
 class SlowSqlViewSet(viewsets.ViewSet):

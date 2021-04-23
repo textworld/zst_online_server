@@ -5,10 +5,13 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r'mysql_schema', SchemaViewSet, basename='mysql_schema')
+router.register(r'ansible_task', AnsibleTaskViewSet, basename='ansible_task')
 
 
 urlpatterns = [
     *router.urls,
     path('query_result/', query_result),
-    path('install_mysql/', install_mysql)
+    path('install_mysql/', install_mysql),
+
+
 ]
