@@ -1,0 +1,13 @@
+[mysql]
+auto-rehash
+socket =/tmp/mysql.sock
+
+[mysqld]
+user = mysql       
+basedir = {{ mysql_base_dir }}
+datadir = {{ mysql_data_dir_base | default('/database/mysql/data/') }}{{mysql_port}}
+server_id ={{ 1024 | random(1) }}    
+port ={{ mysql_port | default(3306)}}
+
+socket = /tmp/mysql.{{mysql_port | default(3306)}}.sock       
+

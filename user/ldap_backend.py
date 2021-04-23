@@ -18,7 +18,8 @@ class LdapBackend:
         return user
 
     def authenticate(self, request, username=None, password=None, **kwargs):
-        results = self.connection.search_s('o=zst_python,dc=example,dc=com', ldap.SCOPE_SUBTREE, "(uid=%s)" % username)
+
+        results = self.connection.search_s(settings.ZST_LDAP_SEARCH_OU, ldap.SCOPE_SUBTREE, "(cn=%s)" % username)
         if results is not None and len(results) == 1:
             u = results[0]
             print(u)
@@ -45,7 +46,7 @@ class LdapBackend:
 
     def _get_connection(self):
         if self._connection is None:
-            self._connection = ldap.initialize('ldap://127.0.0.1:10389', bytes_mode=False)
+            self._connection = ldap.initialize('ldap://' + settings.ZST_LDAP_HOST, bytes_mode=False)
             # option和tls
         return self._connection
 

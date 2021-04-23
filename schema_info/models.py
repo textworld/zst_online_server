@@ -1,5 +1,26 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+import datetime
+from enum import Enum, EnumMeta
+
+
+class ChoiceEnumMeta(EnumMeta):
+
+    def __getattribute__(cls, name):
+        attr = super().__getattribute__(name)
+        if isinstance(attr, Enum):
+            return attr.value
+        return attr
+
+    def __iter__(self):
+        return ((tag.value, tag.name) for tag in super().__iter__())
+
+
+class ChoiceEnum(Enum, metaclass=ChoiceEnumMeta):
+    """
+    Enum for Django ChoiceField use.
+    """
+    pass
 
 # Create your models here.
 # 基础表，包含了gmt_update 和gmt_create两个字段
@@ -20,6 +41,20 @@ class Host(CommonModel):
     def __str__(self):
         return f"Host: {self.id}-{self.name}-{self.memory}-{self.cpu}"
 
+class AnsibleTaskResult(CommonModel):
+    class Status(ChoiceEnum):
+        Waiting = "waiting"
+        Running = "running"
+        Success = "success"
+        Failed = "failed"
+    task_id = models.CharField(max_length=128)
+    task_name = models.CharField(max_length=128)
+    host = models.CharField(max_length=64)
+    result = models.TextField(max_length=65535)
+    status = models.CharField(max_length=32, choices=Status, default=Status.Waiting)
+    start_time = models.DateTimeField(auto_now_add=True)
+    end_time = models.DateTimeField(null=True)
+
 # Create your models here.
 class MySQLSchema(CommonModel):
     MASTER = 'master'
@@ -34,6 +69,7 @@ class MySQLSchema(CommonModel):
     role = models.CharField(max_length=64, choices=((MASTER, 'master'), (SLAVE, 'slave')))
     status = models.CharField(max_length=64, null=False, choices=((ONLINE, 'online'), (OFFLINE, 'offline'), (PENDING, 'pending')), default='online')
     phy_host = models.ForeignKey(Host, null=True, on_delete=models.PROTECT, db_constraint=False)
+
 
     class Meta:
         db_table = "mysql_schema"

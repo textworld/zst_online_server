@@ -1,40 +1,38 @@
-from __future__ import absolute_import, unicode_literals
 import os
+
 from celery import Celery, platforms
-from datetime import timedelta
-from celery.schedules import crontab
-import django
-import os, sys
 
-path=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0,path)
-
+# set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'zst_project.settings')
-django.setup()
 
-#app = Celery('zst_project', broker=redis_endpoint)
 app = Celery('zst_project')
 
-#app.config_from_object('django.conf:settings', namespace='CELERY')
-app.config_from_object('django.conf:settings')
+# Using a string here means the worker doesn't have to serialize
+# the configuration object to child processes.
+# - namespace='CELERY' means all celery-related configuration keys
+#   should have a `CELERY_` prefix.
+app.config_from_object('django.conf:settings', namespace='CELERY')
 
-
-app.conf.update(
-    CELERYBEAT_SCHEDULE={
-        'sum-task': {
-            'task': 'deploy.tasks.add',
-            'schedule':  timedelta(seconds=20),
-            'args': (5, 6)
-        },
-        'send-report': {
-            'task': 'deploy.tasks.report',
-            'schedule': crontab(hour=4, minute=30, day_of_week=1),
-        }
-    }
-)
-
-
+# Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
 
-platforms.C_FORCE_ROOT = True
+app.conf.beat_schedule = {
+    # 'chekc-every-30': {
+    #     'task': 'schema_info.tasks.periodic_check_mysql',
+    #     'schedule': 30,
+    # },
+    # 'fetch-proxy-10': {
+    #     'task': 'news.tasks.periodic_fetch_proxy_from_zhima',
+    #     'schedule': 10
+    # },
+    # 'scrap_dbaplus-10': {
+    #     'task': 'news.tasks.scrap_news',
+    #     'schedule': 10
+    # }
+    # 'slowsql_alarm': {
+    #     'task': 'slowsql.tasks.alarm_minute',
+    #     'schedule': 10
+    # }
+}
 
+platforms.C_FORCE_ROOT = True

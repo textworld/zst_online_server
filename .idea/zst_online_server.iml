@@ -14,7 +14,11 @@
   </component>
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$" />
-    <orderEntry type="jdk" jdkName="Python 3.7 (zst_online_server-xGqmY0pw)" jdkType="Python SDK" />
+<<<<<<< HEAD
+    <orderEntry type="jdk" jdkName="Python 3.8 virtualenv at ~/.local/share/virtualenvs/zst_online_server-DiVawJ_Y" jdkType="Python SDK" />
+=======
+    <orderEntry type="jdk" jdkName="Python 3.8 (base)" jdkType="Python SDK" />
+>>>>>>> master
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TemplatesService">

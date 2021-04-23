@@ -1,0 +1,96 @@
+---
+- hosts: all
+  become: True
+  remote_user: vagrant
+  vars:
+    mysql_data_dir_base: /data/mysql/
+    mysql_port: 3307 
+    mysql_base_dir: /opt/mysql-8.0.16-linux-glibc2.12-x86_64/
+    install_packages:
+      - vim
+      - unzip
+      - libaio1
+      - libaio-dev
+      - libnuma-dev
+      - libdata-dumper-simple-perl
+      - libncurses5
+  tasks:
+    - name: install packages
+      package:
+        name: "{{ install_packages }}"
+        state: present
+
+    - name: create mysql group
+      group:
+        name: mysql
+        state: present
+
+    - name: create mysql user
+      user:
+        name: mysql
+        group: mysql
+        state: present
+        shell: /sbin/nologin
+
+    - name: scp the mysql installer
+      unarchive:
+        src: mysql-8.0.16-linux-glibc2.12-x86_64.zip
+        dest: /opt/
+        owner: mysql
+        group: mysql
+
+    - name: Add mysql bin dir to $PATH.
+      copy:
+        dest: /etc/profile.d/mysql-path.sh
+        content: 'PATH=$PATH:{{ mysql_base_dir }}bin'
+
+    - name: mysql data base dir not exist
+      stat:
+        path: "{{ mysql_data_dir_base }}{{ mysql_port }}"
+      register: stat_data_dir
+
+    - name: fail task when data dir exist
+      fail:
+        msg: "Whoops! data dir has already exist."
+      when: stat_data_dir.stat.exists
+
+    - name: mkdir data base dir
+      file:
+        path: "{{ mysql_data_dir_base }}{{ mysql_port }}"
+        state: directory
+        owner: mysql
+        group: mysql
+
+    - name: template my.cnf
+      template:
+        src: my.cnf.tmpl
+        dest: "/etc/my.{{mysql_port}}.cnf"
+        owner: mysql
+        group: mysql
+        backup: yes
+
+
+    - name: check initialize
+      shell: "ls {{mysql_data_dir_base}}{{mysql_port}} | wc -l"
+      register: data_dir_count
+
+    - name: init mysql
+      shell: "{{ mysql_base_dir }}bin/mysqld --defaults-file=/etc/my.{{mysql_port}}.cnf --datadir={{mysql_data_dir_base}}{{ mysql_port }} --initialize-insecure"
+      when: data_dir_count.rc == 0 and data_dir_count.stdout == "0"
+
+    - name: start mysql
+      shell: "{{ mysql_base_dir }}bin/mysqld_safe --defaults-file=/etc/my.{{mysql_port}}.cnf &"
+
+    - name: transfer sql statement to remonte
+      template:
+        src: ./templates/secure.sql
+        dest: /tmp/make_mysql_secure.sql
+
+    - name: make mysql secure
+      shell: "mysql -hlocalhost -uroot -S /tmp/mysql.{{mysql_port}}.sock < /tmp/make_mysql_secure.sql"
+
+    - name: remove temp file /tmp/make_mysql_secure.sql
+      file:
+        dest: /tmp/make_mysql_secure.sql
+        state: absent
+
