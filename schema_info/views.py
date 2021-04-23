@@ -89,35 +89,35 @@ class SchemaViewSet(viewsets.ModelViewSet):
     def get_process_list(self, request, pk=None, *args, **kwargs):
         if pk is None:
             raise Http404
-        instance = self.get_queryset().get(pk=pk)
+
         db = self.get_connection(pk)
         c = db.cursor()
         c.execute("show processlist;")
         results = c.fetchall()  # 获取所有数据
         columns = ["id", "user", "host", "db", "command", "time", "state", "info"]
 
-        process_lists = []
+        process_list = []
         for row in results:
             d = {}
             for idx, col_name in enumerate(columns):
-                d[col_name] = row[idx]
-            process_lists.append(d)
+                d[col_name] =row[idx]
+            process_list.append(d)
         c.close()
         db.close()
-        return Response(process_lists)
+        return Response(process_list)
 
     @action(detail=True, methods=['delete'])
-    def kill_process_list(self, request, pk=None, *args, **kwargs):
-        if pk is None is None:
+    def kill_process_list(self, request, pk=None):
+        if pk is None:
             raise Http404
         serializer = KillMySQLProcessSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         process_id = serializer.validated_data.get('process_id')
-
         db = self.get_connection(pk)
         c = db.cursor()
-        c.execute("kill %d" % process_id)
+        print("kill %d;" % process_id)
+        c.execute("kill %d;" % process_id)
         c.close()
         db.close()
         return Response("success")
