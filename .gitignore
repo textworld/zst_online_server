@@ -220,3 +220,5 @@ ansible-playbook/files/*
 *.zip
 *.tar.gz
 *.tar
+
+.idea/*

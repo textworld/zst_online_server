@@ -14,17 +14,19 @@
   </component>
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$" />
-<<<<<<< HEAD
     <orderEntry type="jdk" jdkName="Python 3.8 virtualenv at ~/.local/share/virtualenvs/zst_online_server-DiVawJ_Y" jdkType="Python SDK" />
-=======
-    <orderEntry type="jdk" jdkName="Python 3.8 (base)" jdkType="Python SDK" />
->>>>>>> master
     <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="PyDocumentationSettings">
+    <option name="format" value="PLAIN" />
+    <option name="myDocStringFormat" value="Plain" />
   </component>
   <component name="TemplatesService">
     <option name="TEMPLATE_CONFIGURATION" value="Django" />
-  </component>
-  <component name="TestRunnerService">
-    <option name="PROJECT_TEST_RUNNER" value="pytest" />
+    <option name="TEMPLATE_FOLDERS">
+      <list>
+        <option value="$MODULE_DIR$/slowsql/templates" />
+      </list>
+    </option>
   </component>
 </module>
