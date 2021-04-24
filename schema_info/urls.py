@@ -3,7 +3,6 @@ from rest_framework.routers import DefaultRouter
 from schema_info.views import *
 from rest_framework.routers import DefaultRouter
 
-
 router = DefaultRouter()
 router.register(r'mysql_schema', SchemaViewSet, basename='mysql_schema')
 router.register(r'ansible_task', AnsibleTaskViewSet, basename='ansible_task')
