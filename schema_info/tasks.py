@@ -1,6 +1,7 @@
 # 名字一定要取成tasks.py 否则，celery是无法自动发现
 from celery import shared_task, Task
 from time import sleep
+from datetime import datetime
 from celery.utils.log import get_task_logger
 from .models import MySQLSchema, AnsibleTaskResult
 from celery import chain, group
@@ -39,6 +40,7 @@ class ResultsCollectorJSONCallback(CallbackBase):
         self.host_failed = {}
         self.task_id = task_id
         self.schema_id = schema_id
+        self.is_failed = False
 
     def save_log(self, msg, status=None):
         task = AnsibleTaskResult.objects.get(task_id=self.task_id)
@@ -48,54 +50,22 @@ class ResultsCollectorJSONCallback(CallbackBase):
         task.save()
 
     def runner_on_failed(self, host, res, ignore_errors=False):
-        self.save('FAILED: %s %s' % (host, res))
+        if not ignore_errors:
+            self.is_failed = True
+        self.save_log('FAILED: %s %s, ignores: %s' % (host, res, ignore_errors))
 
     def runner_on_ok(self, host, res):
-        self.save('OK: %s %s' % (host, res))
+        self.save_log('OK: %s %s' % (host, res))
 
     def runner_on_skipped(self, host, item=None):
-        self.save('SKIPPED: %s' % host)
+        self.save_log('SKIPPED: %s' % host)
 
     def runner_on_unreachable(self, host, res):
-        self.save('UNREACHABLE: %s %s' % (host, res))
+        self.is_failed = True
+        self.save_log('UNREACHABLE: %s %s' % (host, res))
 
-    def runner_on_async_failed(self, host, res, jid):
-        self.save('ASYNC_FAILED: %s %s %s' % (host, res, jid))
-
-    def playbook_on_import_for_host(self, host, imported_file):
-        self.save('IMPORTED: %s %s' % (host, imported_file))
-
-    def playbook_on_not_import_for_host(self, host, missing_file):
-        self.save('NOTIMPORTED: %s %s' % (host, missing_file))
-
-    # def v2_runner_on_unreachable(self, result):
-    #     host = result._host
-    #     self.host_unreachable[host.get_name()] = result
-    #     logger.error("runner unreachable")
-    #
-    # def v2_runner_on_ok(self, result, *args, **kwargs):
-    #     if result.task_name == "Gathering Facts":
-    #         return
-    #     print("result", result.__dict__)
-    #     print("result result: ", json.dumps(result._result, indent=4))
-    #     print("task", result._task.__dict__)
-    #     host = result._host
-    #     self.host_ok[host.get_name()] = result
-    #     print(json.dumps({host.name: result._result}, indent=4))
-    #     r = AnsibleTaskResult(
-    #         task_id=self.task_id,
-    #         task_name=result.task_name,
-    #         host=host,
-    #         result=json.dumps(result._result, indent=4),
-    #         status="ok")
-    #     r.save()
-    #
-    # def v2_runner_on_failed(self, result, *args, **kwargs):
-    #     host = result._host
-    #     self.host_failed[host.get_name()] = result
-    #     logger.error("failed ansible task: %s", json.dumps({host.name: result._result}, indent=4))
-
-
+# 调用ansible的API，
+# 返回值： 成功，True; 失败, False
 def ansible_install_api(task_id, play_book_path, schema):
     context.CLIARGS = ImmutableDict(connection='smart', private_key_file=settings.ANSIBLE_PRIVATE_KEY, forks=10,
                                     become_method='sudo', become_user='root', check=False, diff=False, verbosity=0)
@@ -138,12 +108,11 @@ def ansible_install_api(task_id, play_book_path, schema):
         play_book['remote_user'] = 'vagrant'
         play_book['vars']['mysql_port'] = schema.port
         play_book['vars']['mysql_schema'] = schema.schema
-        print(play_book)
+        print("playbook", play_book)
         play = Play().load(play_book, variable_manager=variable_manager, loader=loader)
         # Actually run it
         try:
             result = tqm.run(play)  # most interesting data for a play is actually sent to the callback's methods
-            print("Result", result)
         finally:
             # we always need to cleanup child procs and the structures we use to communicate with them
             logger.info("tqm has finished")
@@ -156,7 +125,7 @@ def ansible_install_api(task_id, play_book_path, schema):
 
     # Remove ansible tmpdir
     shutil.rmtree(C.DEFAULT_LOCAL_TMP, True)
-
+    return not results_callback.is_failed
 
 @shared_task
 def periodic_check_mysql():
@@ -211,7 +180,14 @@ def install_mysql_by_ansible(self, schema_id):
         logger.info("Base_dir: %s", base_dir)
         task = AnsibleTaskResult(task_id=task_id, status=AnsibleTaskResult.Status.Running, result="Start to execute")
         task.save()
-        ansible_install_api(task_id, join(base_dir, "ansible-playbook/mysql.yml"), schema)
+        success = ansible_install_api(task_id, join(base_dir, "ansible-playbook/mysql.yml"), schema)
+        task = AnsibleTaskResult.objects.get(task_id=task_id)
+        if success:
+            task.status = AnsibleTaskResult.Status.Success
+        else:
+            task.status = AnsibleTaskResult.Status.Failed
+        task.end_time = datetime.now()
+        task.save()
     except Exception as e:
         logger.error(e)
         raise

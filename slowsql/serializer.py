@@ -4,24 +4,33 @@ from schema_info.models import MySQLSchema
 
 
 class AlarmSettingSerializer(serializers.ModelSerializer):
-    # schema_name = serializers.CharField(required=True, write_only=True)
-    #schema_name = serializers.SlugRelatedField(many=False, read_only=True, slug_field='schema')
     schema = serializers.SlugRelatedField(many=False, slug_field='schema', queryset=MySQLSchema.objects.all(), allow_null=False)
 
     class Meta:
         model = AlarmSettingModel
         fields = '__all__'
 
+    def validate(self, data):
+        if not data['type']:
+            raise serializers.ValidationError("setting type is required")
+
+        return data
+
     # def validate_schema(self, value):
-    #     if not MySQLSchema.objects.filter(schema=value).exists():
-    #         raise serializers.ValidationError("schema {} is not exist".format(value))
+    #     Model = self.Meta.model
+    #     row = Model.objects.filter(schema=value).exists()
+    #     if row:
+    #         raise serializers.ValidationError("the setting of schema {} has exist".format(value))
     #     return value
 
-    # def create(self, validated_data):
-    #     schema = MySQLSchema.objects.filter(schema=validated_data['schema_name']).first()
-    #     validated_data['schema'] = schema
-    #     del validated_data['schema_name']
-    #     return AlarmSettingModel.objects.create(**validated_data)
+    def create(self, validated_data):
+        print(validated_data["schema"])
+        Model = self.Meta.model
+        if Model.objects.exclude(delete=True).filter(schema=validated_data["schema"]).exists():
+            raise serializers.ValidationError("the setting of schema {} has exist".format(validated_data["schema"]))
+        return AlarmSettingModel.objects.create(**validated_data)
+
+
 
 class SchemaAlarmSerializer(serializers.Serializer):
     query_time = serializers.IntegerField(min_value=0, required=True)

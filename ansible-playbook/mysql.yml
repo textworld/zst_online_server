@@ -87,7 +87,7 @@
         dest: /tmp/make_mysql_secure.sql
 
     - name: make mysql secure
-      shell: "mysql -hlocalhost -uroot -S /tmp/mysql.{{mysql_port}}.sock < /tmp/make_mysql_secure.sql"
+      shell: "{{ mysql_base_dir }}bin/mysql -hlocalhost -uroot -S /tmp/mysql.{{mysql_port}}.sock < /tmp/make_mysql_secure.sql"
 
     - name: remove temp file /tmp/make_mysql_secure.sql
       file:

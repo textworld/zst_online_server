@@ -189,6 +189,8 @@ ANSIBLE_PRIVATE_KEY = "~/.ssh/id_rsa"
 
 connections.create_connection(hosts=['192.168.33.200:9200'], timeout=60)
 
+
+
 # flume
 # filebeat -> logstash -> es
 # agent -> router ->kafka1 音乐  -> Flink -> hdfs

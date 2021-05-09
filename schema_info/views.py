@@ -55,7 +55,7 @@ class CustomPagination(PageNumberPagination):
 
 
 class AnsibleTaskViewSet(viewsets.ModelViewSet):
-    queryset = AnsibleTaskResult.objects.all()
+    queryset = AnsibleTaskResult.objects.order_by('-start_time')
     serializer_class = AnsibleTaskSerializer
     pagination_class = CustomPagination
     filter_backends = [filters.DjangoFilterBackend]

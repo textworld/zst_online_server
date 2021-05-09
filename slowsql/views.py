@@ -26,11 +26,14 @@ import matplotlib
 from pylab import mpl
 import os
 from .helper import get_aggs,get_results,build_aggs
+from rest_framework import exceptions
+
 
 token = ""
 expire = int(time.time())
 
 
+    
 class CustomPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
@@ -351,7 +354,7 @@ def alarm(request):
 
 
 class AlarmSettingViewSet(viewsets.ModelViewSet):
-    queryset = AlarmSettingModel.objects.exclude(schema__isnull=True)
+    queryset = AlarmSettingModel.objects.exclude(schema__isnull=True).exclude(delete=True)
     serializer_class = AlarmSettingSerializer
 
     @action(detail=False, methods=['post', 'get'])
@@ -364,7 +367,7 @@ class AlarmSettingViewSet(viewsets.ModelViewSet):
 
         settings = AlarmSettingModel.objects.filter(schema=None).order_by("-id")
         if not settings.exists():
-            return Response([])
+            raise exceptions.NotFound('global setting was not found')
 
         return Response(AddGlbAlarmSerializer(settings.first()).data)
 
@@ -373,7 +376,7 @@ class AlarmSettingViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             # 保存设置
             return Response([])
-        settings = AlarmSettingModel.objects.filter(type__exact=AlarmSettingModel.Type.Schema, delete=0).all()
+        settings = AlarmSettingModel.objects.filter(type__exact=AlarmSettingModel.Type.Schema, delete=False).all()
         if settings.count() == 0:
             return Response([])
         return Response(SchemaAlarmSerializer(settings, many=True).data)
