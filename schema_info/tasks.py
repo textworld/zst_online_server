@@ -3,7 +3,7 @@ from celery import shared_task, Task
 from time import sleep
 from datetime import datetime
 from celery.utils.log import get_task_logger
-from .models import MySQLSchema, AnsibleTaskResult
+from .models import MySQLInstance, AnsibleTaskResult
 from celery import chain, group
 
 import json
@@ -173,7 +173,7 @@ def install_mysql_by_ansible(self, schema_id):
     # xxxxxx
     # 执行ansible脚本去安装mysql
     task_id = self.request.id
-    schema = MySQLSchema.objects.get(pk=schema_id)
+    schema = MySQLInstance.objects.get(pk=schema_id)
     try:
         from os.path import dirname, abspath, join
         base_dir = dirname(dirname(abspath(__file__)))
@@ -197,7 +197,7 @@ def install_mysql_by_ansible(self, schema_id):
 # Good
 @shared_task
 def check_mysql(schema_id):
-    MySQLSchema.objects.get(pk=schema_id)
+    MySQLInstance.objects.get(pk=schema_id)
     # 通过python去尝试连接对应的mysql实例，如果连接失败，则进行告警
 
     return "success"

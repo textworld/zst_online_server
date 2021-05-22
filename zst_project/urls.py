@@ -18,10 +18,8 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('api/', include('course.urls')),
     path('api/zst_mysql/v1/auth/', include('user.urls')),
     path('api/zst_mysql/v1/schema_info/', include('schema_info.urls')),
     path('api/zst_mysql/v1/slowsql/', include('slowsql.urls')),
-    path('api/zst_mysql/v1/news/', include('news.urls'))
-    # path('api/v1/bill/', include('bill.urls'))
+    path('api/zst_mysql/v1/news/', include('siteapp.urls'))
 ]

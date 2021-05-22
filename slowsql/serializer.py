@@ -1,10 +1,10 @@
 from slowsql.models import AlarmSettingModel
 from rest_framework import serializers
-from schema_info.models import MySQLSchema
+from schema_info.models import MySQLInstance
 
 
 class AlarmSettingSerializer(serializers.ModelSerializer):
-    schema = serializers.SlugRelatedField(many=False, slug_field='schema', queryset=MySQLSchema.objects.all(), allow_null=False)
+    schema = serializers.SlugRelatedField(many=False, slug_field='schema', queryset=MySQLInstance.objects.all(), allow_null=False)
 
     class Meta:
         model = AlarmSettingModel
@@ -35,7 +35,7 @@ class AlarmSettingSerializer(serializers.ModelSerializer):
 class SchemaAlarmSerializer(serializers.Serializer):
     query_time = serializers.IntegerField(min_value=0, required=True)
     query_count = serializers.IntegerField(min_value=0, required=True)
-    schema = serializers.SlugRelatedField(many=False, slug_field='schema', queryset=MySQLSchema.objects.all(), allow_null=False)
+    schema = serializers.SlugRelatedField(many=False, slug_field='schema', queryset=MySQLInstance.objects.all(), allow_null=False)
 
 
 # 全局告警设置序列化器

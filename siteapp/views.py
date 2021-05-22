@@ -1,48 +1,56 @@
-from celery import shared_task, Task
 import requests
+from django.http.response import HttpResponse
 import json
 from .models import ProxyModel, NewsModel
 from bs4 import BeautifulSoup
 import datetime
 import hashlib
-from celery.utils.log import get_task_logger
-logger = get_task_logger(__name__)
+from rest_framework import status, viewsets
+from .serializer import NewsSerializer
+from rest_framework.pagination import PageNumberPagination
 
-@shared_task
-def periodic_fetch_proxy_from_zhima():
+
+
+class CustomPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    page_query_param = 'page_num'
+    max_page_size = 500
+
+
+class NewsViewSet(viewsets.ModelViewSet):
+    queryset = NewsModel.objects.order_by('-insert_time').all()
+    serializer_class = NewsSerializer
+    pagination_class = CustomPagination
+
+
+# Create your views here.
+def test(request):
     url = "http://webapi.http.zhimacangku.com/getip?num=1&type=2&pro=&city=0&yys=0&port=1&pack=131583&ts=1&ys=1&cs=1&lb=3&sb=0&pb=4&mr=1&regions="
     resp = requests.get(url)
-    try:
-        if resp.status_code >= 300:
-            raise Exception("incorrect status_code {}:{}".format(resp.status_code, resp.text))
-
+    if resp.status_code == 200:
         body = json.loads(resp.text)
-        if body['code'] != 0:
-            raise Exception("incorrect code in resp: {}", resp.text)
-
-        data = body['data'][0]
-        try:
-            m = ProxyModel.objects.get(ip=data['ip'], port=data['port'])
-            m.expire_time = data['expire_time']
-            m.city = data['city']
-            m.isp = data['isp']
-        except ProxyModel.DoesNotExist:
-            m = ProxyModel(**data)
-        m.save()
-    except Exception as e:
-        logger.error("failed to get proxy server from zhima: {}".format(e))
+        if body['code'] == 0:
+            data = body['data'][0]
+            try:
+                m = ProxyModel.objects.get(ip=data['ip'], port=data['port'])
+                m.expire_time = data['expire_time']
+                m.city = data['city']
+                m.isp = data['isp']
+            except ProxyModel.DoesNotExist:
+                m = ProxyModel(**data)
+            m.save()
+    return HttpResponse({"data": "success"})
 
 
-@shared_task
-def scrap_news():
+def scraper(request):
     import ssl
     ssl._create_default_https_context = ssl._create_unverified_context
 
     proxies = ProxyModel.objects.filter(expire_time__gt=datetime.datetime.now()).order_by('-failed_count')
     if not proxies.exists():
-        return "no proxy found"
-
-    proxy_ip = proxies[0]
+        return HttpResponse("no proxy found")
+    proxy_ip =proxies[0]
     proxyMeta = "http://%(host)s:%(port)s" % {
 
         "host": proxy_ip.ip,
@@ -71,9 +79,9 @@ def scrap_news():
                     n = NewsModel(title=title, url=href, hash=hash)
 
                 n.save()
-            return "success"
+            return HttpResponse("success")
         else:
-            return "failed"
+            return HttpResponse("failed")
     except requests.exceptions.RequestException as e:
         proxy_ip.call_count += 1
         proxy_ip.failed_count += 1
@@ -81,4 +89,4 @@ def scrap_news():
     finally:
         proxy_ip.save()
 
-    return "failed"
+    return HttpResponse("failed")

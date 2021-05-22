@@ -1,12 +1,14 @@
 from django.shortcuts import render
-from schema_info.models import MySQLSchema
+from schema_info.models import MySQLInstance
 from django.http import HttpResponse
 from rest_framework import status, viewsets
-from schema_info.serializers import MySQLSchemaSerializer, MySQLSchemaNameSerializer, KillMySQLProcessSerializer
+from schema_info.serializers import MySQLInstanceSerializer, MySQLSchemaNameSerializer, KillMySQLProcessSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django_filters import rest_framework as filters
+
+from rest_framework import filters as drf_filters
 import MySQLdb
 from django.http import Http404
 from .tasks import add, install_mysql_by_ansible, check_mysql
@@ -19,8 +21,12 @@ from schema_info.serializers import *
 from .serializers import MySQLInstallSerializer
 
 
+
+
+
+
 def group_request(request):
-    instances = MySQLSchema.objects.all()
+    instances = MySQLInstance.objects.all()
     fn = group(check_mysql.s(i.id) for i in instances)
     group_result = fn.delay()
     print(group_result)
@@ -35,7 +41,7 @@ def install_mysql(request):
 
 def check_mysql_view(request):
     schema_id = request.POST['schema_id']
-    mysql_instance = MySQLSchema.objects.get(pk=schema_id)
+    mysql_instance = MySQLInstance.objects.get(pk=schema_id)
     install_mysql_by_ansible.delay(mysql_instance)
     return HttpResponse("success")
 
@@ -63,8 +69,8 @@ class AnsibleTaskViewSet(viewsets.ModelViewSet):
 
 
 class SchemaViewSet(viewsets.ModelViewSet):
-    queryset = MySQLSchema.objects.all()
-    serializer_class = MySQLSchemaSerializer
+    queryset = MySQLInstance.objects.all()
+    serializer_class = MySQLInstanceSerializer
     pagination_class = CustomPagination
     filter_backends = [filters.DjangoFilterBackend]
     filterset_fields = ['status', 'schema', 'host_ip', 'port']
@@ -127,3 +133,12 @@ class SchemaViewSet(viewsets.ModelViewSet):
         db = MySQLdb.connect(host=instance.host_ip, port=instance.port, user="root",
                              passwd="afTD]$]yQ@2:{LQSEQ6bt$]F1mK}Kt#1", db=instance.schema, connect_timeout=2)
         return db
+
+
+class DbSchemaViewSet(viewsets.ModelViewSet):
+    queryset = DbSchema.objects.order_by('-create_time')
+    serializer_class = DbSchemaSerializer
+    pagination_class = CustomPagination
+    filter_backends = (drf_filters.SearchFilter, drf_filters.OrderingFilter,)
+    ordering = ('create_time', 'name')
+    search_fields = ['name']

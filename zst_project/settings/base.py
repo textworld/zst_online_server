@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'schema_info.apps.SchemaInfoConfig',
     'slowsql.apps.SlowsqlConfig',
-    'news.apps.NewsConfig'
+    'siteapp.apps.SiteappConfig'
 ]
 
 AUTH_USER_MODEL = 'user.ZstUser'
@@ -87,7 +87,7 @@ WSGI_APPLICATION = 'zst_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',   # 数据库引擎
-        'NAME': 'zst_online',  # 数据库名，先前创建的
+        'NAME': 'zst_online_2',  # 数据库名，先前创建的
         'USER': 'root',     # 用户名，可以自己创建用户
         'PASSWORD': 'dI4,,%2zYPqqQ[w/:m(ZiuK(wUeg^mW(',  # 密码
         'HOST': '127.0.0.1',  # mysql服务所在的主机ip
@@ -189,45 +189,4 @@ ANSIBLE_PRIVATE_KEY = "~/.ssh/id_rsa"
 
 connections.create_connection(hosts=['192.168.33.200:9200'], timeout=60)
 
-
-
-# flume
-# filebeat -> logstash -> es
-# agent -> router ->kafka1 音乐  -> Flink -> hdfs
-#                 -> kakfa2 严选
-
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'formatters': {
-#         'verbose': {
-#             'format': '[{levelname}] {asctime} {module} {process:d} {thread:d} {message}',
-#             'style': '{',
-#         },
-#         'simple': {
-#             'format': '{levelname} {message}',
-#             'style': '{',
-#         },
-#     },
-#     'handlers': {
-#         'file': {
-#             'level': 'INFO',
-#             'class': 'logging.handlers.TimedRotatingFileHandler',
-#             'filename': './debug.log',
-#             'when': 'midnight',
-#             'interval': 1,
-#             'backupCount': 10,
-#             'formatter': 'verbose'
-#         },
-#         'console': {
-#             'class': 'logging.StreamHandler',
-#         },
-#     },
-#     'loggers': {
-#         'django': {
-#             'handlers': ['file', 'console'],
-#             'level': 'INFO',
-#             'propagate': True,
-#         },
-#     },
-# }
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

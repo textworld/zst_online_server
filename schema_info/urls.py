@@ -6,6 +6,7 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register(r'mysql_schema', SchemaViewSet, basename='mysql_schema')
 router.register(r'ansible_task', AnsibleTaskViewSet, basename='ansible_task')
+router.register(r'db_schema', DbSchemaViewSet, basename='db_schema')
 
 
 urlpatterns = [

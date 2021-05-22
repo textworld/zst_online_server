@@ -1,5 +1,5 @@
 from django.db import models
-from schema_info.models import MySQLSchema
+from schema_info.models import MySQLInstance
 from zst_project.models import ChoiceEnum
 
 
@@ -9,7 +9,7 @@ class AlarmSettingModel(models.Model):
         Global = "global"
         Schema = "schema"
         SQL = "SQL"
-    schema = models.ForeignKey(MySQLSchema, db_constraint=False, on_delete=models.CASCADE, null=True, default=None)
+    schema = models.ForeignKey(MySQLInstance, db_constraint=False, on_delete=models.CASCADE, null=True, default=None)
     stop_alarm = models.BooleanField(default=False)
     sql_print_hash = models.CharField(max_length=128, null=True)
     sql_print = models.TextField(null=True)

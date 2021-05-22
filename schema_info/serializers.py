@@ -3,6 +3,20 @@ from .models import Host
 from schema_info.models import *
 
 
+class MySQLInstanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MySQLInstance
+        fields = '__all__'
+
+
+class DbSchemaSerializer(serializers.ModelSerializer):
+    instances = MySQLInstanceSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = DbSchema
+        fields = ['name', 'instances', 'create_time']
+
+
 class HostSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=30)
     memory = serializers.CharField(max_length=30)
@@ -21,10 +35,6 @@ class HostSerializer(serializers.Serializer):
         return instance
 
 
-class MySQLSchemaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MySQLSchema
-        fields = '__all__'
 
 
 class MySQLInstallSerializer(serializers.Serializer):
@@ -34,9 +44,9 @@ class MySQLInstallSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         print(validated_data)
-        schema = MySQLSchema(host_ip=validated_data['host_ip'],
-                             port=validated_data['port'], schema=validated_data['schema'],
-                             status=MySQLSchema.PENDING, role="master")
+        schema = MySQLInstance(host_ip=validated_data['host_ip'],
+                               port=validated_data['port'], schema=validated_data['schema'],
+                               status=MySQLInstance.PENDING, role="master")
         schema.save()
         return schema
 
@@ -58,9 +68,9 @@ class MySQLInstallSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         print(validated_data)
-        schema = MySQLSchema(host_ip=validated_data['host_ip'],
-                             port=validated_data['port'], schema=validated_data['schema'],
-                             status=MySQLSchema.PENDING, role="master")
+        schema = MySQLInstance(host_ip=validated_data['host_ip'],
+                               port=validated_data['port'], schema=validated_data['schema'],
+                               status=MySQLInstance.PENDING, role="master")
         schema.save()
         return schema
 

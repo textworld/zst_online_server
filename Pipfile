@@ -25,6 +25,7 @@ elasticsearch-dsl = "*"
 bs4 = "*"
 matplotlib = "*"
 python-ldap = "*"
+requests = "*"
 
 [requires]
 python_version = "3.9"
