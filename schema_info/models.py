@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 import datetime
 from enum import Enum, EnumMeta
 
+from django.contrib.auth.backends import BaseBackend
 
 class ChoiceEnumMeta(EnumMeta):
 
