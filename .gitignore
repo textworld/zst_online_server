@@ -222,3 +222,5 @@ ansible-playbook/files/*
 *.tar
 
 .idea/*
+
+zst_project/settings/prod.py
