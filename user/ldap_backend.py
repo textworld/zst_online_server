@@ -19,7 +19,8 @@ class LdapBackend:
 
     def authenticate(self, request, username=None, password=None, **kwargs):
 
-        results = self.connection.search_s(settings.ZST_LDAP_SEARCH_OU, ldap.SCOPE_SUBTREE, "(cn=%s)" % username)
+        results = self.connection.search_s(settings.ZST_LDAP_SETTING.get('search_ou'), ldap.SCOPE_SUBTREE,
+                                           settings.ZST_LDAP_SETTING.get('search_filter') % username)
         if results is not None and len(results) == 1:
             u = results[0]
             print(u)
@@ -46,13 +47,13 @@ class LdapBackend:
 
     def _get_connection(self):
         if self._connection is None:
-            self._connection = ldap.initialize('ldap://' + settings.ZST_LDAP_HOST, bytes_mode=False)
+            self._connection = ldap.initialize('ldap://' + settings.ZST_LDAP_SETTING.get('url'), bytes_mode=False)
             # option和tls
         return self._connection
 
     def _bind(self):
         #self._bind_as(self.settings.BIND_DN, self.settings.BIND_PASSWORD, sticky=True)
-        self._bind_as(settings.ZST_LDAP_BIND_DN_STR, settings.ZST_LDAP_BIND_DN_PASSWORD, sticky=True)
+        self._bind_as(settings.ZST_LDAP_SETTING.get('bind_dn'), settings.ZST_LDAP_SETTING.get('bind_password'), sticky=True)
 
     def _bind_as(self, bind_dn, bind_password, sticky=False):
         self._get_connection().simple_bind_s(bind_dn, bind_password)

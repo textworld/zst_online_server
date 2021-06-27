@@ -3,7 +3,7 @@ from rest_framework.utils import json
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 import logging
-
+from rest_framework import exceptions, status
 
 class ApiRenderer(BaseRenderer):
     media_type = 'application/json'
@@ -28,9 +28,15 @@ class ApiRenderer(BaseRenderer):
         return json.dumps(data)
 
 
-def my_api_exception_handler(exec, context):
-    logging.exception("exception occur: %s", exec)
-    response = exception_handler(exec, context)
+def my_api_exception_handler(exc, context):
+    logging.exception("exception occur: %s", exc)
+    if isinstance(exc, exceptions.ValidationError):
+        message = ""
+        if isinstance(exc.detail, list):
+            message = exc.detail[0]
+        response = Response(message, status=exc.status_code)
+    else:
+        response = exception_handler(exc, context)
     if response is None:
         response = Response("internal error", status=500)
 
