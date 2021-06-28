@@ -18,14 +18,13 @@ class LdapBackend:
         return user
 
     def authenticate(self, request, username=None, password=None, **kwargs):
+        try:
+            results = self.connection.search_s(settings.ZST_LDAP_SETTING.get('search_ou'), ldap.SCOPE_SUBTREE,
+                                            settings.ZST_LDAP_SETTING.get('search_filter') % username)
+            if results is not None and len(results) == 1:
+                u = results[0]
+                user_dn = u[0]
 
-        results = self.connection.search_s(settings.ZST_LDAP_SETTING.get('search_ou'), ldap.SCOPE_SUBTREE,
-                                           settings.ZST_LDAP_SETTING.get('search_filter') % username)
-        if results is not None and len(results) == 1:
-            u = results[0]
-            print(u)
-            user_dn = u[0]
-            try:
                 self._bind_as(user_dn, password, True)
                 query_field = "username"
                 UserModel = get_user_model()
@@ -42,8 +41,8 @@ class LdapBackend:
                     user.set_unusable_password()
                     user.save()
                 return user
-            except ldap.INVALID_CREDENTIALS:
-                return None
+        except ldap.INVALID_CREDENTIALS:
+            return None
 
     def _get_connection(self):
         if self._connection is None:
