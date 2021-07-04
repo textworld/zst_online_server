@@ -78,7 +78,7 @@ WSGI_APPLICATION = 'zst_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',   # 数据库引擎
-        'NAME': 'zst_project',  # 数据库名，先前创建的
+        'NAME': 'zst_db',  # 数据库名，先前创建的
         'USER': 'root',     # 用户名，可以自己创建用户
         'PASSWORD': 'dI4,,%2zYPqqQ[w/:m(ZiuK(wUeg^mW(',  # 密码
         'HOST': '127.0.0.1',  # mysql服务所在的主机ip
@@ -154,3 +154,8 @@ REST_FRAMEWORK = {
     'PAGE_QUERY_PARAM': 'p_num',
     'PAGE_SIZE_QUERY_PARAM': 'p_size'
 }
+
+MYSQL_PLAYBOOK_PATH = '/tmp/mysql_playbook'
+MYSQL_PLAYBOOK_GIT  = 'git@github.com:textworld/ansible_zst_mysql.git'
+
+

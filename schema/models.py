@@ -29,3 +29,19 @@ class InstanceModel(common.CommonModel):
     class Meta:
         db_table = "t_db_instance"
         verbose_name = '实例表'
+
+
+
+class AnsibleTaskResult(common.CommonModel):
+    class Status(common.ChoiceEnum):
+        Waiting = "waiting"
+        Running = "running"
+        Success = "success"
+        Failed = "failed"
+    task_id = models.CharField(max_length=128)
+    task_name = models.CharField(max_length=128)
+    host = models.CharField(max_length=64)
+    result = models.TextField(max_length=65535)
+    status = models.CharField(max_length=32, choices=Status, default=Status.Waiting)
+    start_time = models.DateTimeField(auto_now_add=True)
+    end_time = models.DateTimeField(null=True)
