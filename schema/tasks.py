@@ -33,8 +33,8 @@ def install_mysql_by_ansible(self, instance_id):
     instance = InstanceModel.objects.get(pk=instance_id)
     try:
         from os.path import dirname, abspath, join
-        base_dir = dirname(dirname(abspath(__file__)))
-        logger.info("Base_dir: %s", base_dir)
+        # base_dir = dirname(dirname(abspath(__file__)))
+        # logger.info("Base_dir: %s", base_dir)
         task = AnsibleTaskResult(task_id=task_id, status=AnsibleTaskResult.Status.Running, result="Start to execute")
         task.save()
         # 通过git，去更新安装脚本
@@ -81,14 +81,16 @@ def ansible_install_api(task_id, play_book_path, instance):
     if len(host_list) == 1:
         sources += ','
 
+    logger.info('sources: %s', sources)
+
     loader = DataLoader()
-    passwords = dict(vault_pass='ffffff')
-
-    results_callback = ResultsCollectorJSONCallback(task_id=task_id)
-
     inventory = InventoryManager(loader=loader, sources=sources)
 
     variable_manager = VariableManager(loader=loader, inventory=inventory)
+
+    results_callback = ResultsCollectorJSONCallback(task_id=task_id)
+
+    passwords = dict(vault_pass='')
     tqm = TaskQueueManager(
         inventory=inventory,
         variable_manager=variable_manager,
@@ -101,6 +103,7 @@ def ansible_install_api(task_id, play_book_path, instance):
 
     import os
     os.chdir(os.path.dirname(play_book_path))
+
     with open(play_book_path) as f:
         data = yaml.load(f, yaml.SafeLoader)
         if isinstance(data, list):

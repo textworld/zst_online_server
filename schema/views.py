@@ -31,6 +31,13 @@ class SchemaViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
 
+    @action(detail=False, methods=['get'])
+    def get_distinct_schema_names(self, request, *args, **kwargs):
+        queryset = self.get_queryset().values('name').distinct()
+        # 我们这里没有使用序列化器，而是将query set变成了一个列表返回
+        name_list = [d["name"] for d in list(queryset)]
+        return Response(name_list)
+
 
 class InstanceViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = InstanceModel.objects.all()
