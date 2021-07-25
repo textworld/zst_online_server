@@ -1,25 +1,25 @@
 import MySQLdb
 from django.http import Http404
-from rest_framework import filters
-from rest_framework import viewsets
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
-from rest_framework.exceptions import APIException
-from zst_project.common import CustomPagination
-from .serializers import *
-from .models import *
-import logging
-from .tasks import install_mysql_by_ansible
-
 from django.http import HttpResponse
+from rest_framework import filters, exceptions, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import APIException
+from rest_framework.response import Response
 
+from zst_project.common import CustomPagination
+from .es_document import SlowQuery
+from .es_helper import get_aggs, get_results
+from .serializers import *
 from .tasks import add
+from .tasks import install_mysql_by_ansible
+from .models import AlarmSettingModel
+from .serializers import SchemaAlarmSerializer
+
 
 def add_request(request):
-   result = add.delay(3, 3)
-   print(result)
-   return HttpResponse("success")
+    result = add.delay(3, 3)
+    print(result)
+    return HttpResponse("success")
 
 
 class SchemaViewSet(viewsets.ModelViewSet):
@@ -49,7 +49,6 @@ class InstanceViewSet(viewsets.ReadOnlyModelViewSet):
         if schema:
             queryset = queryset.filter(schema=schema)
         return queryset
-
 
     @action(detail=False, methods=['POST'])
     def install_mysql(self, request, *args, **kwargs):
@@ -114,3 +113,158 @@ class AnsibleResultViews(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ('start_time',)
 
 
+class SlowSQLViewSet(viewsets.ViewSet):
+    @action(methods=['get'], detail=False)
+    def search(self, request, *args, **kwargs):
+        s = self.get_query_by_params(request)
+        interval = request.query_params.get('interval', '1d')
+
+        is_aggr_by_hash = request.query_params.get('is_aggr_by_hash', False)
+        if isinstance(is_aggr_by_hash, str) and is_aggr_by_hash.lower() == 'true':
+            is_aggr_by_hash = True
+        else:
+            is_aggr_by_hash = False
+        aggs = self.get_aggs_by_sql_id(interval)
+        if is_aggr_by_hash:
+            get_aggs(s.aggs, aggs)
+            result = s.execute().aggregations
+            rs = get_results(aggs, result)
+
+        paginator = CustomPagination()
+        if is_aggr_by_hash:
+            data = paginator.paginate_queryset(rs, request)
+        else:
+            data = paginator.paginate_queryset(s, request)
+            data = [q.to_dict() for q in data]
+
+        return paginator.get_paginated_response(data)
+
+    def get_aggs_by_sql_id(self, interval):
+        return {
+                "aggs": {
+                    "date": {
+                        "date_histogram": {
+                            "field": "@timestamp",
+                            "calendar_interval": interval
+                        },
+                        "aggs": {
+                            "schema": {
+                                "terms": {
+                                    "field": "schema.keyword"
+                                },
+                                "aggs": {
+                                    "sql_id": {
+                                        "terms": {
+                                            "field": "sql_id.keyword"
+                                        },
+                                        "aggs": {
+                                            "rows_sent": {
+                                                "avg": {
+                                                    "field": "rows_sent"
+                                                }
+                                            },
+                                            "rows_examined": {
+                                                "avg": {
+                                                    "field": "rows_examined"
+                                                }
+                                            },
+                                            "query_time_sec": {
+                                                "avg": {
+                                                    "field": "query_time_sec"
+                                                }
+                                            },
+                                            "sql": {
+                                                "top_hits": {
+                                                    "_source": [
+                                                        "finger",
+                                                        "@timestamp"
+                                                    ],
+                                                    "sort": [
+                                                        {
+                                                            "@timestamp": {
+                                                                "order": "desc"
+                                                            }
+                                                        }
+                                                    ],
+                                                    "size": 1
+                                                }
+                                            }
+
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+    # 通用获取参数
+    def get_query_by_params(self, request, sorts=None):
+        start = request.query_params.get('start')
+        end = request.query_params.get('end')
+        s = SlowQuery.search()
+        if start is None or not isinstance(start, str) or len(start.strip()) == 0:
+            start = None
+        if end is None or not isinstance(end, str) or len(end.strip()) == 0:
+            end = None
+
+        if start is not None and end is not None:
+            options = {
+                # greater or equal than  -> gte 大于等于
+                # greater than  -> gt 大于
+                # little or equal thant -> lte 小于或等于
+                'gte': start,
+                'lte': end
+            }
+            s = s.filter('range', **{'@timestamp': options})
+
+        sorts = request.query_params.get('sorts', sorts)
+        if isinstance(sorts, str) and len(sorts) > 0:
+            sorts = [item.strip() for item in sorts.split(",") if len(item.strip()) > 0]
+            s = s.sort(*sorts)
+        else:
+            s = s.sort('-@timestamp')
+
+        schema = request.query_params.get('schema', None)
+        if schema is not None and len(schema) > 0:
+            s = s.filter('term', schema__keyword=schema)
+
+        keyword = request.query_params.get('keyword', None)
+        if keyword is not None and len(keyword) > 0:
+            s = s.query('match', slowsql=keyword)
+
+        sql_id = request.query_params.get('sql_id', None)
+        if sql_id is not None and len(sql_id) > 0:
+            s = s.filter('term', sql_id__keyword=sql_id)
+
+
+        return s
+
+
+class AlarmSettingViewSet(viewsets.ModelViewSet):
+    queryset = AlarmSettingModel.objects.exclude(schema__isnull=True).exclude(delete=True)
+    serializer_class = AlarmSettingSerializer
+
+    @action(detail=False, methods=['post', 'get'])
+    def global_setting(self, request, *args, **kwargs):
+        if request.method == 'POST':
+            s = AddGlbAlarmSerializer(data=request.data)
+            s.is_valid(raise_exception=True)
+            instance = s.save()
+            return Response("success")
+
+        settings = AlarmSettingModel.objects.filter(schema=None).order_by("-id")
+        if not settings.exists():
+            raise exceptions.NotFound('global setting was not found')
+
+        return Response(AddGlbAlarmSerializer(settings.first()).data)
+
+    @action(detail=False, methods=['post', 'get'])
+    def schema_settings(self, request, *args, **kwargs):
+        if request.method == 'POST':
+            # 保存设置
+            return Response([])
+        settings = AlarmSettingModel.objects.filter(type__exact=AlarmSettingModel.Type.Schema, delete=False).all()
+        if settings.count() == 0:
+            return Response([])
+        return Response(SchemaAlarmSerializer(settings, many=True).data)

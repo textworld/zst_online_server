@@ -6,6 +6,7 @@ router = DefaultRouter()
 router.register(r'schema_view', SchemaViewSet, basename='db_schema')
 router.register(r'instance_view', InstanceViewSet, basename='db_instance')
 router.register(r'ansible_task', AnsibleResultViews, basename='ansible_result')
+router.register(r'es_document', SlowSQLViewSet, basename='es_document')
 
 urlpatterns = [
     *router.urls,

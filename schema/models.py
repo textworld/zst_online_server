@@ -46,3 +46,18 @@ class AnsibleTaskResult(common.CommonModel):
     start_time = models.DateTimeField(auto_now_add=True)
     end_time = models.DateTimeField(null=True)
 
+
+class AlarmSettingModel(models.Model):
+    class Type(common.ChoiceEnum):
+        Global = "global"
+        Schema = "schema"
+        SQL = "SQL"
+    schema = models.ForeignKey(SchemaModel, to_field='name', db_constraint=False, on_delete=models.CASCADE, null=True, default=None,
+                               help_text="库名")
+    stop_alarm = models.BooleanField(default=False, help_text="是否停止告警")
+    sql_id = models.CharField(max_length=128, null=True, help_text="sql id")
+    sql_print = models.TextField(null=True, help_text="sql指纹")
+    query_time = models.FloatField(default=0.0, help_text="查询时间阈值")
+    query_count = models.IntegerField(default=0, help_text="每分钟出现的次数")
+    delete = models.BooleanField(default=False, help_text="逻辑删除标志")
+    type = models.CharField(max_length=10, choices=Type, null=False, help_text="设置的类型")

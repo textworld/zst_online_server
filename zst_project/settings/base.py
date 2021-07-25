@@ -159,6 +159,6 @@ REST_FRAMEWORK = {
 MYSQL_PLAYBOOK_PATH = '/tmp/mysql_playbook'
 MYSQL_PLAYBOOK_GIT  = 'git@github.com:textworld/ansible_zst_mysql.git'
 
-#connections.create_connection(hosts=['10.37.129.4:9200'], timeout=60)
+connections.create_connection(hosts=['10.37.129.4:9200'], timeout=60)
 
 
