@@ -12,9 +12,8 @@ platforms.C_FORCE_ROOT = True
 
 
 app.conf.beat_schedule = {
-   'chekc-every-30': {
-       'task': 'schema.tasks.check_mysql',
-       'schedule': 30,
-       'args': (1,)
-   }
+    'slowsql_alarm': {
+        'task': 'schema.tasks.alarm_minute',
+        'schedule': 10
+    }
 }

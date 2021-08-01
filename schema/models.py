@@ -51,7 +51,7 @@ class AlarmSettingModel(models.Model):
     class Type(common.ChoiceEnum):
         Global = "global"
         Schema = "schema"
-        SQL = "SQL"
+        SQL = "sql"
     schema = models.ForeignKey(SchemaModel, to_field='name', db_constraint=False, on_delete=models.CASCADE, null=True, default=None,
                                help_text="库名")
     stop_alarm = models.BooleanField(default=False, help_text="是否停止告警")

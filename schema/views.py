@@ -1,6 +1,19 @@
+import os
+import smtplib
+import time
+from datetime import datetime
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import formataddr
+
 import MySQLdb
+import matplotlib
+import matplotlib.pyplot as plt
+import pylab
 from django.http import Http404
 from django.http import HttpResponse
+from django.template.loader import render_to_string
 from rest_framework import filters, exceptions, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException
@@ -10,17 +23,185 @@ from zst_project.common import CustomPagination
 from .es_document import SlowQuery
 from .es_helper import get_aggs, get_results
 from .serializers import *
-from .tasks import add
-from .tasks import install_mysql_by_ansible
-from .models import AlarmSettingModel
 from .serializers import SchemaAlarmSerializer
+from .tasks import install_mysql_by_ansible
+import redis
 
 
-def add_request(request):
-    result = add.delay(3, 3)
-    print(result)
+def send_email_simple(request):
+
+    my_sender = "zhangwenbing@zstpython.onexmail.com"
+    email_receive = "text.zwb@outlook.com"
+    # 邮件的内容
+    msg = MIMEText('这是一条测试邮件,请忽略', 'plain', 'utf-8')
+    # [发件人的邮箱昵称、发件人邮箱账号], 昵称随便
+    msg['From'] = formataddr([" ", my_sender])
+    # [收件人邮箱昵称、收件人邮箱账号], 昵称随便
+    msg['To'] = formataddr([" ", email_receive])
+    # 邮件的主题，也就是邮件的标题
+    msg['Subject'] = "邮件测试"
+
+    server = smtplib.SMTP_SSL('smtp.exmail.qq.com', 465)
+
+    # server.starttls()
+    # Next, log in to the server
+    server.login(my_sender, "ZSTmail2021")
+
+    server.sendmail(my_sender, email_receive, msg.as_string())
+    server.quit()
     return HttpResponse("success")
 
+
+def send_html_email(request):
+    # render_to_string 渲染html模板
+    report = render_to_string("slowsql.html", context={
+        "send_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+    my_sender = "zhangwenbing@zstpython.onexmail.com"
+    email_receive = "text.zwb@outlook.com"
+    # 邮件的内容
+    msg = MIMEText(report, 'html', 'utf-8')
+    # [发件人的邮箱昵称、发件人邮箱账号], 昵称随便
+    msg['From'] = formataddr([" ", my_sender])
+    # [收件人邮箱昵称、收件人邮箱账号], 昵称随便
+    msg['To'] = formataddr([" ", "text.zwb@outlook.com"])
+    # 邮件的主题，也就是邮件的标题
+    msg['Subject'] = "慢SQL周报"
+
+    server = smtplib.SMTP_SSL('smtp.exmail.qq.com', 465)
+    #
+    # server.starttls()
+    # Next, log in to the server
+    server.login(my_sender, "ZSTmail2021")
+
+    server.sendmail("zhangwenbing@zstpython.onexmail.com", "text.zwb@outlook.com", msg.as_string())
+    server.quit()
+    #
+    return HttpResponse("success")
+
+def send_email_with_pic(request):
+    report = render_to_string("slowsql.html", context={
+        "send_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+    my_sender = "zhangwenbing@zstpython.onexmail.com"
+
+    msg = MIMEMultipart('related')
+    msg['From'] = formataddr([" ", my_sender])
+    # [收件人邮箱昵称、收件人邮箱账号], 昵称随便
+    msg['To'] = formataddr([" ", "text.zwb@outlook.com"])
+    # 邮件的主题，也就是邮件的标题
+    msg['Subject'] = "慢SQL周报"
+    msg.attach(MIMEText(report, 'html', 'utf-8'))
+
+    with open("/tmp/Python.png", "rb") as f:
+        pic = MIMEImage(f.read())
+        pic.add_header('Content-ID', '<pic>')
+        msg.attach(pic)
+
+    server = smtplib.SMTP_SSL('smtp.exmail.qq.com', 465)
+
+    # server.starttls()
+    # Next, log in to the server
+    server.login(my_sender, "ZSTmail2021")
+
+    server.sendmail("zhangwenbing@zstpython.onexmail.com", "text.zwb@outlook.com", msg.as_string())
+    server.quit()
+
+    return HttpResponse("success")
+
+
+def send_with_matplotlib(request):
+    s = SlowQuery.search()
+    options = {
+        # greater or equal than  -> gte 大于等于
+        # greater than  -> gt 大于
+        # little or equal thant -> lte 小于或等于
+        'gte': '2020-12-01T00:00:00.000Z',
+        'lte': '2021-12-31T00:00:00.000Z'
+    }
+    s = s.filter('range', **{'@timestamp': options})
+    aggs = {
+        "aggs": {
+            "date": {
+                "date_histogram": {
+                    "field": "@timestamp",
+                    "calendar_interval": "day"
+                },
+                "aggs": {
+                    "avg_query_time": {
+                        "avg": {
+                            "field": "query_time_sec"
+                        }
+                    },
+                    "avg_lock_time": {
+                        "avg": {
+                            "field": "lock_time"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    get_aggs(s.aggs, aggs)
+    result = s.execute().aggregations
+    rs = get_results(aggs, result)
+    dates = [r['date'][:10] for r in rs]
+    counts = [r['date_count'] for r in rs]
+    print(dates)
+    print(counts)
+
+    matplotlib.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
+    matplotlib.rcParams['font.family'] = 'Arial Unicode MS'
+    pylab.mpl.rcParams['font.sans-serif'] = ['Arial Unicode MS']  # 更新字体格式
+    pylab.mpl.rcParams['font.size'] = 14
+
+    plt.figure(figsize=(12, 4))
+    # 生成图形
+    plt.title('慢SQL数量趋势图')
+    plt.plot(dates, counts, label='慢SQL数量')
+    plt.legend()
+
+    plt.xticks(rotation=-30, ha='left')
+    plt.tick_params(axis='x', labelsize=8)
+    # 显示图形
+    now = float(time.time())
+    pic_name = str(now) + ".jpg"
+    plt.savefig(pic_name)
+    plt.close()
+
+    report = render_to_string("slowsql.html", context={
+        "send_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+    my_sender = "zhangwenbing@zstpython.onexmail.com"
+
+    msg = MIMEMultipart('related')
+    msg['From'] = formataddr([" ", my_sender])
+    # [收件人邮箱昵称、收件人邮箱账号], 昵称随便
+    msg['To'] = formataddr([" ", "text.zwb@outlook.com"])
+    # 邮件的主题，也就是邮件的标题
+    msg['Subject'] = "慢SQL周报"
+    msg.attach(MIMEText(report, 'html', 'utf-8'))
+
+    with open(pic_name, "rb") as f:
+        pic = MIMEImage(f.read())
+        pic.add_header('Content-ID', '<pic>')
+        msg.attach(pic)
+
+    server = smtplib.SMTP_SSL('smtp.exmail.qq.com', 465)
+
+    # server.starttls()
+    # Next, log in to the server
+    server.login(my_sender, "ZSTmail2021")
+
+    server.sendmail("zhangwenbing@zstpython.onexmail.com", "text.zwb@outlook.com", msg.as_string())
+    server.quit()
+
+    os.remove(pic_name)
+
+    return HttpResponse("success")
 
 class SchemaViewSet(viewsets.ModelViewSet):
     queryset = SchemaModel.objects.all()
@@ -139,6 +320,45 @@ class SlowSQLViewSet(viewsets.ViewSet):
 
         return paginator.get_paginated_response(data)
 
+    def get_query_by_params(self, request, sorts=None):
+        start = request.query_params.get('start')
+        end = request.query_params.get('end')
+        s = SlowQuery.search()
+        if start is None or not isinstance(start, str) or len(start.strip()) == 0:
+            start = None
+        if end is None or not isinstance(end, str) or len(end.strip()) == 0:
+            end = None
+
+        if start is not None and end is not None:
+            options = {
+                # greater or equal than  -> gte 大于等于
+                # greater than  -> gt 大于
+                # little or equal thant -> lte 小于或等于
+                'gte': start,
+                'lte': end
+            }
+            s = s.filter('range', **{'@timestamp': options})
+
+        sorts = request.query_params.get('sorts', sorts)
+        if isinstance(sorts, str) and len(sorts) > 0:
+            sorts = [item.strip() for item in sorts.split(",") if len(item.strip()) > 0]
+            s = s.sort(*sorts)
+        else:
+            s = s.sort('-@timestamp')
+
+        schema = request.query_params.get('schema', None)
+        if schema is not None and len(schema) > 0:
+            s = s.filter('term', schema__keyword=schema)
+
+        keyword = request.query_params.get('keyword', None)
+        if keyword is not None and len(keyword) > 0:
+            s = s.query('match', slowsql=keyword)
+
+        sql_id = request.query_params.get('sql_id', None)
+        if sql_id is not None and len(sql_id) > 0:
+            s = s.filter('term', sql_id__keyword=sql_id)
+        return s
+
     def get_aggs_by_sql_id(self, interval):
         return {
                 "aggs": {
@@ -198,53 +418,13 @@ class SlowSQLViewSet(viewsets.ViewSet):
                     }
                 }
             }
-    # 通用获取参数
-    def get_query_by_params(self, request, sorts=None):
-        start = request.query_params.get('start')
-        end = request.query_params.get('end')
-        s = SlowQuery.search()
-        if start is None or not isinstance(start, str) or len(start.strip()) == 0:
-            start = None
-        if end is None or not isinstance(end, str) or len(end.strip()) == 0:
-            end = None
-
-        if start is not None and end is not None:
-            options = {
-                # greater or equal than  -> gte 大于等于
-                # greater than  -> gt 大于
-                # little or equal thant -> lte 小于或等于
-                'gte': start,
-                'lte': end
-            }
-            s = s.filter('range', **{'@timestamp': options})
-
-        sorts = request.query_params.get('sorts', sorts)
-        if isinstance(sorts, str) and len(sorts) > 0:
-            sorts = [item.strip() for item in sorts.split(",") if len(item.strip()) > 0]
-            s = s.sort(*sorts)
-        else:
-            s = s.sort('-@timestamp')
-
-        schema = request.query_params.get('schema', None)
-        if schema is not None and len(schema) > 0:
-            s = s.filter('term', schema__keyword=schema)
-
-        keyword = request.query_params.get('keyword', None)
-        if keyword is not None and len(keyword) > 0:
-            s = s.query('match', slowsql=keyword)
-
-        sql_id = request.query_params.get('sql_id', None)
-        if sql_id is not None and len(sql_id) > 0:
-            s = s.filter('term', sql_id__keyword=sql_id)
-
-
-        return s
 
 
 class AlarmSettingViewSet(viewsets.ModelViewSet):
-    queryset = AlarmSettingModel.objects.exclude(schema__isnull=True).exclude(delete=True)
+    queryset = AlarmSettingModel.objects.all()
     serializer_class = AlarmSettingSerializer
 
+    # 用于全局告警的获取与设置
     @action(detail=False, methods=['post', 'get'])
     def global_setting(self, request, *args, **kwargs):
         if request.method == 'POST':
@@ -253,18 +433,158 @@ class AlarmSettingViewSet(viewsets.ModelViewSet):
             instance = s.save()
             return Response("success")
 
-        settings = AlarmSettingModel.objects.filter(schema=None).order_by("-id")
+        settings = AlarmSettingModel.objects.filter(type=AlarmSettingModel.Type.Global).order_by("-id")
         if not settings.exists():
             raise exceptions.NotFound('global setting was not found')
 
         return Response(AddGlbAlarmSerializer(settings.first()).data)
 
+    @action(detail=False, methods=['post'])
+    def get_sql_id(self, request, *args, **kwargs):
+        print(request.body)
+        return Response({'sql': 'xxxx', 'sql_id': 'xxxxx', 'sql_print': 'xxxx'})
+
+    def filter_queryset(self, queryset):
+        alarm_type = self.request.query_params.get('type')
+        if alarm_type:
+            queryset = self.get_queryset().filter(type=alarm_type)
+
+        schema = self.request.query_params.get('schema', None)
+        if schema is not None:
+            queryset = queryset.filter(schema=schema)
+
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(sql_print__contains=search)
+
+        return queryset
+
     @action(detail=False, methods=['post', 'get'])
     def schema_settings(self, request, *args, **kwargs):
         if request.method == 'POST':
             # 保存设置
+
             return Response([])
         settings = AlarmSettingModel.objects.filter(type__exact=AlarmSettingModel.Type.Schema, delete=False).all()
         if settings.count() == 0:
             return Response([])
         return Response(SchemaAlarmSerializer(settings, many=True).data)
+
+
+def alarm_minute(request, *args, **kwargs):
+    # 从settings中获取配置信息
+    r = redis.StrictRedis(host='localhost', port=6379, db=0)
+    key_name = "slowsql_alarm_start"
+    duration = 60
+    start = int(time.time()) - duration
+
+    if r.exists(key_name):
+        start = int(r.get(key_name).decode('utf-8'))
+    else:
+        r.set(key_name, start + duration)
+    end = start + duration
+
+    print("start: {}, type: {}".format(start, type(start)))
+
+    global_query_time = 1
+    global_query_count = 1
+
+    global_cfg = AlarmSettingModel.objects.filter(type=AlarmSettingModel.Type.Global, delete=False).order_by("-id")
+    if global_cfg.exists():
+        global_query_time = global_cfg.first().query_time
+        global_query_count = global_cfg.first().query_count
+
+    schema_cfg_dict = {}
+    schema_cfg_queryset = AlarmSettingModel.objects.filter(delete=False, type=AlarmSettingModel.Type.Schema)
+    for schema_cfg in schema_cfg_queryset:
+        schema_cfg_dict[schema_cfg.schema.name] = schema_cfg
+
+
+    sql_cfg_dict = {}
+    sql_cfg_queryset = AlarmSettingModel.objects.filter(delete=False, type=AlarmSettingModel.Type.SQL)
+    for sql_cfg in sql_cfg_queryset:
+        cfg_key = sql_cfg.schema.name + "#" + sql_cfg.sql_id
+        sql_cfg_dict[cfg_key] = sql_cfg
+
+    s = SlowQuery.search()
+
+    options = {
+        # greater or equal than  -> gte 大于等于
+        # greater than  -> gt 大于
+        # little or equal thant -> lte 小于或等于
+        # 'gte': start,
+        # 'lte': end
+        'gte': 1627774833000-3600000,
+        'lte': 1627774833000
+    }
+    s = s.filter('range', **{'@timestamp': options})
+    aggs = {
+        "aggs": {
+            "schema": {
+                "terms": {
+                    "field": "schema.keyword"
+                },
+                "aggs": {
+                    "sql_id": {
+                        "terms": {
+                            "field": "sql_id.keyword"
+                        },
+                        "aggs": {
+                            "avg_query_time": {
+                                "avg": {
+                                    "field": "query_time_sec"
+                                }
+                            },
+                            "avg_lock_time": {
+                                "avg": {
+                                    "field": "lock_time_sec"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    get_aggs(s.aggs, aggs)
+
+    result = s.execute().aggregations
+
+    rs = get_results(aggs, result)
+
+
+    for r in rs:
+        threshold_query_time = global_query_time
+        threshold_query_count = global_query_count
+
+        cfg = schema_cfg_dict.get(r.get('schema'), None)
+        if cfg is not None:
+            threshold_query_count = cfg.query_count
+            threshold_query_time = cfg.query_time
+
+        sql_cfg = sql_cfg_dict.get(r.get('schema') + "#" + r.get("sql_id"), None)
+        if sql_cfg is not None:
+            threshold_query_count = sql_cfg.query_count
+            threshold_query_time = sql_cfg.query_time
+
+        if r['avg_query_time'] > threshold_query_time and r['sql_id_count'] > threshold_query_count:
+            send_slow_alarm(r)
+            break
+    return HttpResponse("success")
+
+from .alarms import WexinAlarm
+
+msg_sender = WexinAlarm()
+
+
+def send_slow_alarm(record):
+    # TODO： 加上告警记录
+    msg_template = "您的数据库【{}】存在慢SQL: {}，平均执行时间为{}，一分钟执行了{}次，请关注"
+    s = SlowQuery.search()
+    results = s.filter("term", sql_id__keyword=record['sql_id']).execute()
+    print(results)
+    sql_printer = ""
+    if len(results.hits.hits) > 0:
+        sql_printer = results.hits.hits[0]['_source']['finger']
+    msg = msg_template.format(record['schema'], sql_printer, record['avg_query_time'], record['sql_id_count'])
+    msg_sender.send_msg("ZhangWenBing", msg)

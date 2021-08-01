@@ -9,3 +9,5 @@ CELERY_TIMEZONE = "Asia/Shanghai"
 CELERY_TASK_TIME_LIMIT = 30 * 60
 
 ANSIBLE_PRIVATE_KEY = "~/.ssh/id_rsa"
+
+SOAR_URL = 'http://127.0.0.1:8080'
