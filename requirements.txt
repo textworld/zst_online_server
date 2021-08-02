@@ -1,4 +1,4 @@
-Django==3.2.3
+Django==3.2.4
 elasticsearch_dsl==7.3.0
 requests==2.25.1
 redis==3.5.3
