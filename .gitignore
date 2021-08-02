@@ -217,10 +217,9 @@ ansible-playbook/files/*
 .idea/
 
 
-*.zip
 *.tar.gz
 *.tar
 
 .idea/*
 
-./zst_project/settings/prod.py
+zst_project/settings/prod.py
