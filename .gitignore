@@ -223,4 +223,4 @@ ansible-playbook/files/*
 
 .idea/*
 
-zst_project/settings/prod.py
+./zst_project/settings/prod.py

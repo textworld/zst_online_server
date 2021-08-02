@@ -153,12 +153,16 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'PAGE_QUERY_PARAM': 'p_num',
-    'PAGE_SIZE_QUERY_PARAM': 'p_size'
+    'PAGE_SIZE_QUERY_PARAM': 'p_size',
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
 }
 
 MYSQL_PLAYBOOK_PATH = '/tmp/mysql_playbook'
 MYSQL_PLAYBOOK_GIT  = 'git@github.com:textworld/ansible_zst_mysql.git'
 
 connections.create_connection(hosts=['10.37.129.4:9200'], timeout=60)
+
 
 
