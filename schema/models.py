@@ -61,3 +61,4 @@ class AlarmSettingModel(models.Model):
     query_count = models.IntegerField(default=0, help_text="每分钟出现的次数")
     delete = models.BooleanField(default=False, help_text="逻辑删除标志")
     type = models.CharField(max_length=10, choices=Type, null=False, help_text="设置的类型")
+

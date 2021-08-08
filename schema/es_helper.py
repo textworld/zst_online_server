@@ -21,6 +21,32 @@ def get_aggs(agg, d):
         agg = agg.bucket(k, build_aggs(aggs.get(k)))
         get_aggs(agg, aggs.get(k))
 
+def get_timestamp_results(tags, result):
+
+    if tags is None or len(tags) == 0:
+        groups = []
+        if "timestamp" not in result:
+            return []
+        for bucket in result["timestamp"]["buckets"]:
+            body = [bucket["key"], bucket["doc_count"]]
+            groups.append(body)
+        return [{
+            "tags": {},
+            "vals": groups
+        }]
+    else:
+        tag = tags[0]
+        new_tags = tags.copy()
+        new_tags.pop(0)
+        flat_groups = []
+        for bucket in result[tag]["buckets"]:
+            groups = get_timestamp_results(new_tags, bucket)
+            for group in groups:
+                group["tags"][tag] = bucket["key"]
+                flat_groups.append(group)
+
+        return flat_groups
+
 
 def get_results(agg_query, result):
     if 'aggs' not in agg_query.keys():

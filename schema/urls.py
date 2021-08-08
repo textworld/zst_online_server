@@ -15,5 +15,4 @@ urlpatterns = [
     path('send_html_email/', send_html_email),
     path('send_email_with_pic/', send_email_with_pic),
     path('send_with_matplotlib/', send_with_matplotlib),
-    path('test/', alarm_minute)
 ]

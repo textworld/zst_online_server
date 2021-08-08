@@ -17,7 +17,7 @@ class WexinAlarm:
         now = int(time.time())
         if now < self.expired and len(self.token) > 0:
             return
-
+        # TODO 配置写到配置文件中
         url = "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=ww2ef294fd1f043429&corpsecret=deLb5gd4hiP-l5ekwbEZ6h1WZbGz43VPOWgqwRrfqIM"
 
         response = requests.request("GET", url, headers={}, data={})
