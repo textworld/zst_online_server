@@ -21,7 +21,7 @@ from rest_framework.response import Response
 
 from zst_project.common import CustomPagination
 from .es_document import SlowQuery
-from .es_helper import get_aggs, get_results
+from .es_helper import get_aggs, get_results, get_timestamp_results
 from .serializers import *
 from .serializers import SchemaAlarmSerializer
 from .tasks import install_mysql_by_ansible
@@ -323,6 +323,8 @@ class SlowSQLViewSet(viewsets.ViewSet):
     def get_query_by_params(self, request, sorts=None):
         start = request.query_params.get('start')
         end = request.query_params.get('end')
+
+        # TODO 对start和end参数做校验
         s = SlowQuery.search()
         if start is None or not isinstance(start, str) or len(start.strip()) == 0:
             start = None
@@ -419,6 +421,39 @@ class SlowSQLViewSet(viewsets.ViewSet):
                 }
             }
 
+    @action(detail=False, methods=['get'])
+    def get_aggs_by_date(self, request, *args, **kwargs):
+
+        s = self.get_query_by_params(request, sorts="@timestamp")
+        tags = request.query_params.get("tags")
+
+        aggs = {
+            "aggs": {
+                "schema": {
+                    "terms": {
+                        "field": "schema.keyword"
+                    },
+                    "aggs": {
+                        "timestamp": {
+                            "date_histogram": {
+                                "field": "@timestamp",
+                                "calendar_interval": 'day'
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+        get_aggs(s.aggs, aggs)
+
+        result = s.execute().aggregations
+
+
+        rs = get_timestamp_results(["schema"], result)
+
+
+        return Response(rs)
 
 class AlarmSettingViewSet(viewsets.ModelViewSet):
     queryset = AlarmSettingModel.objects.all()
@@ -471,120 +506,3 @@ class AlarmSettingViewSet(viewsets.ModelViewSet):
         return Response(SchemaAlarmSerializer(settings, many=True).data)
 
 
-def alarm_minute(request, *args, **kwargs):
-    # 从settings中获取配置信息
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
-    key_name = "slowsql_alarm_start"
-    duration = 60
-    start = int(time.time()) - duration
-
-    if r.exists(key_name):
-        start = int(r.get(key_name).decode('utf-8'))
-    else:
-        r.set(key_name, start + duration)
-    end = start + duration
-
-    print("start: {}, type: {}".format(start, type(start)))
-
-    global_query_time = 1
-    global_query_count = 1
-
-    global_cfg = AlarmSettingModel.objects.filter(type=AlarmSettingModel.Type.Global, delete=False).order_by("-id")
-    if global_cfg.exists():
-        global_query_time = global_cfg.first().query_time
-        global_query_count = global_cfg.first().query_count
-
-    schema_cfg_dict = {}
-    schema_cfg_queryset = AlarmSettingModel.objects.filter(delete=False, type=AlarmSettingModel.Type.Schema)
-    for schema_cfg in schema_cfg_queryset:
-        schema_cfg_dict[schema_cfg.schema.name] = schema_cfg
-
-
-    sql_cfg_dict = {}
-    sql_cfg_queryset = AlarmSettingModel.objects.filter(delete=False, type=AlarmSettingModel.Type.SQL)
-    for sql_cfg in sql_cfg_queryset:
-        cfg_key = sql_cfg.schema.name + "#" + sql_cfg.sql_id
-        sql_cfg_dict[cfg_key] = sql_cfg
-
-    s = SlowQuery.search()
-
-    options = {
-        # greater or equal than  -> gte 大于等于
-        # greater than  -> gt 大于
-        # little or equal thant -> lte 小于或等于
-        # 'gte': start,
-        # 'lte': end
-        'gte': 1627774833000-3600000,
-        'lte': 1627774833000
-    }
-    s = s.filter('range', **{'@timestamp': options})
-    aggs = {
-        "aggs": {
-            "schema": {
-                "terms": {
-                    "field": "schema.keyword"
-                },
-                "aggs": {
-                    "sql_id": {
-                        "terms": {
-                            "field": "sql_id.keyword"
-                        },
-                        "aggs": {
-                            "avg_query_time": {
-                                "avg": {
-                                    "field": "query_time_sec"
-                                }
-                            },
-                            "avg_lock_time": {
-                                "avg": {
-                                    "field": "lock_time_sec"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    get_aggs(s.aggs, aggs)
-
-    result = s.execute().aggregations
-
-    rs = get_results(aggs, result)
-
-
-    for r in rs:
-        threshold_query_time = global_query_time
-        threshold_query_count = global_query_count
-
-        cfg = schema_cfg_dict.get(r.get('schema'), None)
-        if cfg is not None:
-            threshold_query_count = cfg.query_count
-            threshold_query_time = cfg.query_time
-
-        sql_cfg = sql_cfg_dict.get(r.get('schema') + "#" + r.get("sql_id"), None)
-        if sql_cfg is not None:
-            threshold_query_count = sql_cfg.query_count
-            threshold_query_time = sql_cfg.query_time
-
-        if r['avg_query_time'] > threshold_query_time and r['sql_id_count'] > threshold_query_count:
-            send_slow_alarm(r)
-            break
-    return HttpResponse("success")
-
-from .alarms import WexinAlarm
-
-msg_sender = WexinAlarm()
-
-
-def send_slow_alarm(record):
-    # TODO： 加上告警记录
-    msg_template = "您的数据库【{}】存在慢SQL: {}，平均执行时间为{}，一分钟执行了{}次，请关注"
-    s = SlowQuery.search()
-    results = s.filter("term", sql_id__keyword=record['sql_id']).execute()
-    print(results)
-    sql_printer = ""
-    if len(results.hits.hits) > 0:
-        sql_printer = results.hits.hits[0]['_source']['finger']
-    msg = msg_template.format(record['schema'], sql_printer, record['avg_query_time'], record['sql_id_count'])
-    msg_sender.send_msg("ZhangWenBing", msg)

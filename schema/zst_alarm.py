@@ -17,7 +17,7 @@ class WexinAlarm:
         now = int(time.time())
         if now < self.expired and len(self.token) > 0:
             return
-
+        # TODO 配置写到配置文件中
         url = "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=ww2ef294fd1f043429&corpsecret=deLb5gd4hiP-l5ekwbEZ6h1WZbGz43VPOWgqwRrfqIM"
 
         response = requests.request("GET", url, headers={}, data={})
@@ -51,6 +51,10 @@ class WexinAlarm:
             "enable_duplicate_check": 0,
             "duplicate_check_interval": 1800
         }
+        # 发送json数据的时候，要加上'Content-Type': 'application/json'
+        # 如果不加，有可能会出现以下错误
+        # 400 bad request
+        # 415 unsupported media type
         headers = {
             'Content-Type': 'application/json'
         }

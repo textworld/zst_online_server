@@ -154,9 +154,9 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
     'PAGE_QUERY_PARAM': 'p_num',
     'PAGE_SIZE_QUERY_PARAM': 'p_size',
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    )
+    # 'DEFAULT_PERMISSION_CLASSES': (
+    #     'rest_framework.permissions.IsAuthenticated',
+    # )
 }
 
 MYSQL_PLAYBOOK_PATH = '/tmp/mysql_playbook'
