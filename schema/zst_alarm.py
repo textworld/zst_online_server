@@ -51,6 +51,10 @@ class WexinAlarm:
             "enable_duplicate_check": 0,
             "duplicate_check_interval": 1800
         }
+        # 发送json数据的时候，要加上'Content-Type': 'application/json'
+        # 如果不加，有可能会出现以下错误
+        # 400 bad request
+        # 415 unsupported media type
         headers = {
             'Content-Type': 'application/json'
         }

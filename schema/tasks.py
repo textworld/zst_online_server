@@ -201,6 +201,10 @@ def send_slow_alarm(record):
 
 @shared_task
 def alarm_minute():
+    # 定时运行的时间 和 我们这里定义告警间隔 必须是倍数
+    # 告警间隔 = n * celery任务定时运行的时间 n >=2
+
+    # celery 60s跑  now()-60s, now()
     # 从settings中获取配置信息
 
     # 告警间隔，单位：秒
