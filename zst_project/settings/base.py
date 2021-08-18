@@ -164,5 +164,6 @@ MYSQL_PLAYBOOK_GIT  = 'git@github.com:textworld/ansible_zst_mysql.git'
 
 connections.create_connection(hosts=['10.37.129.4:9200'], timeout=60)
 
-
+#https://dev.to/weplayinternet/upgrading-to-django-3-2-and-fixing-defaultautofield-warnings-518n
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
