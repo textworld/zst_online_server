@@ -24,6 +24,7 @@ gunicorn = {version = "*", index = "https://pypi.tuna.tsinghua.edu.cn/simple"}
 celery = {version = "==4.3.0", index = "https://pypi.tuna.tsinghua.edu.cn/simple"}
 mysqlclient = "*"
 phonenumbers = "*"
+uwsgi= "==2.0.19.1"
 
 [dev-packages]
 

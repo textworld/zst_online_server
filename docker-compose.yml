@@ -1,0 +1,20 @@
+version: '3'
+services:
+  webapp:
+    image: zst_online_server
+#    network_mode: "host"
+    ports:
+      - "8000:8000"
+    volumes:
+      - "$PWD:/web/zst_online_server/"
+      - "/var/www/logs/celery:/var/log/celery"
+    depends_on:
+      - nginx
+    command: ["./run_web.sh"]
+  nginx:
+    image: zst_nginx
+#    network_mode: "host"
+    ports:
+      - "8090:8090"
+    volumes:
+      - "$PWD:/usr/share/nginx/html/webapp"
