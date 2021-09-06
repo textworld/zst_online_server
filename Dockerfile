@@ -2,7 +2,7 @@ FROM  python:v3.8.10
 
 RUN apt-get update \
     && apt-get install -y libmysqlclient-dev  libldap2-dev libsasl2-dev libssl-dev \
-    && apt-get install -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends git \
         postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
@@ -11,12 +11,6 @@ VOLUME ["/web/zst_online_server"]
 WORKDIR /web
 
 COPY requirements.txt ./
-
-RUN pip install -U pip -i http://mirrors.aliyun.com/pypi/simple
-
-RUN pip config set global.index-url http://mirrors.aliyun.com/pypi/simple
-
-RUN pip config set install.trusted-host mirrors.aliyun.com
 
 RUN pip3 install -r requirements.txt
 
