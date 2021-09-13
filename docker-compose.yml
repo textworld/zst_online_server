@@ -1,6 +1,21 @@
 version: '3'
 
 services:
+  zst_slow_consumer:
+    container_name: zst_slow_consumer
+    image: zst_slow_consumer
+    environment:
+      KAFKA_HOST: 10.211.55.7:9092
+      KAFKA_GROUP_ID: zst_slow_consumer
+      SLOW_QUERY_TOPIC: mysql_slow_log
+      ES_HOST: 10.211.55.7:9200
+      SOAR_HOST: http://zst_soar:8082/
+      ES_INDEX: mysql_slow_log
+  zst_soar:
+    container_name: zst_soar
+    image: zst_soar
+    ports:
+      - "8082:8082"
   webapp:
     image: zst_online_server
     environment:
@@ -11,6 +26,8 @@ services:
       - "$PWD:/web/zst_online_server/"
       - "/var/www/logs/celery:/var/log/celery"
     command: ["./run_web.sh"]
+    depends_on:
+      - zst_soar
   nginx:
     image: zst_nginx
     ports:

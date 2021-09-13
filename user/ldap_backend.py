@@ -38,8 +38,7 @@ class LdapBackend:
                     built = False
 
                 if built:
-                    user.set_password()
-                    #user.set_unusable_password()
+                    user.set_unusable_password()
                     user.save()
                 return user
         except ldap.INVALID_CREDENTIALS:

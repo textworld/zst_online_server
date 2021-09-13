@@ -224,3 +224,6 @@ ansible-playbook/files/*
 
 zst_project/settings/prod.py
 *.db
+
+celerybeat-schedule.bak
+celerybeat-schedule.dir
