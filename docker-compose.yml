@@ -1,8 +1,8 @@
 version: '3'
 
 services:
-  zst_slow_consumer:
-    container_name: zst_slow_consumer
+  zst_kafka_consumer:
+    container_name: zst_kafka_consumer
     image: zst_slow_consumer
     environment:
       KAFKA_HOST: 10.211.55.7:9092
