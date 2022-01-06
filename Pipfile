@@ -21,7 +21,7 @@ python-ldap = "==3.3.1"
 GitPython = "==3.1.18"
 PyYAML = "==5.4.1"
 gunicorn = {version = "*", index = "https://pypi.tuna.tsinghua.edu.cn/simple"}
-celery = {version = "==4.3.0", index = "https://pypi.tuna.tsinghua.edu.cn/simple"}
+celery = {version = "==5.2.2", index = "https://pypi.tuna.tsinghua.edu.cn/simple"}
 mysqlclient = "*"
 phonenumbers = "*"
 
