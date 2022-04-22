@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "==3.2.4"
+django = "==3.2.13"
 elasticsearch-dsl = "==7.3.0"
 requests = "==2.25.1"
 redis = "==3.5.3"
